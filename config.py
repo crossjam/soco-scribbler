@@ -11,4 +11,4 @@ LASTFM_API_KEY = os.getenv("LASTFM_API_KEY", "your_api_key")
 LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET", "your_api_secret")
 
 # Scrobbling settings
-SCROBBLE_INTERVAL = int(os.getenv("SCROBBLE_INTERVAL", "30"))  # seconds
+SCROBBLE_INTERVAL = int(os.getenv("SCROBBLE_INTERVAL", "10"))  # seconds
