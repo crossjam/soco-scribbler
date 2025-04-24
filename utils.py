@@ -1,19 +1,24 @@
-"""
-Utility functions for the Sonos Last.fm scrobbler.
-"""
+"""Utility functions for the Sonos Last.fm scrobbler."""
 
-import sys
-from typing import Dict
 import logging
+import sys
+from collections.abc import Mapping
+from typing import Any
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 # Track display state
-_last_line_count = 0
-_display_started = False
-_log_lines_since_last_display = 0
+_last_line_count: int = 0
+_display_started: bool = False
+_log_lines_since_last_display: int = 0
 
 
 class LogLineCounter(logging.Handler):
-    def emit(self, record):
+    """Handler that counts log lines for display management."""
+
+    def emit(self, _record: logging.LogRecord) -> None:
+        """Process a log record by incrementing the line counter."""
         global _log_lines_since_last_display
         _log_lines_since_last_display += 1
 
@@ -23,42 +28,42 @@ logging.getLogger().addHandler(LogLineCounter())
 
 
 def custom_print(message: str, level: str = "INFO") -> None:
-    """
-    Custom print function that tracks lines and formats output consistently.
+    """Custom print function that tracks lines and formats output consistently.
 
     Args:
         message: The message to print
         level: The log level (INFO, WARNING, ERROR, etc.)
     """
-    global _log_lines_since_last_display
-
     # Count how many newlines are in the message
-    newline_count = message.count("\n")
+    newline_count: int = message.count("\n")
 
     # Format the message with timestamp and level
-    timestamp = logging.Formatter("%(asctime)s").format(
-        logging.LogRecord("", 0, "", 0, None, None, None)
+    timestamp: str = logging.Formatter("%(asctime)s").format(
+        logging.LogRecord("", 0, "", 0, None, None, None),
     )
-    formatted_message = f"{timestamp[:-4]} - {level} - {message}"
+    formatted_message: str = f"{timestamp[:-4]} - {level} - {message}"
 
     # Print the message
-    print(formatted_message, flush=True)
+    print(formatted_message, flush=True)  # noqa: T201
 
-    # Update the line counter - add 1 for the print itself plus any additional newlines in the message
+    # Update the line counter
+    global _log_lines_since_last_display
     _log_lines_since_last_display += 1 + newline_count
 
 
-def reset_log_line_counter():
+def reset_log_line_counter() -> None:
     """Reset the counter for log lines since last display update."""
     global _log_lines_since_last_display
     _log_lines_since_last_display = 0
 
 
 def create_progress_bar(
-    current: int, total: int, threshold: int, width: int = 50
+    current: int,
+    total: int,
+    threshold: int,
+    width: int = 50,
 ) -> str:
-    """
-    Create an ASCII progress bar showing current position and scrobble threshold.
+    """Create an ASCII progress bar showing current position and scrobble threshold.
 
     Args:
         current: Current position in seconds
@@ -73,12 +78,12 @@ def create_progress_bar(
         return "[" + " " * width + "] 0%"
 
     # Calculate exact percentage and positions
-    percentage = (current * 100) // total if total > 0 else 0
-    progress = int((current * width) / total) if total > 0 else 0
-    threshold_pos = int((threshold * width) / total) if total > 0 else 0
+    percentage: int = (current * 100) // total if total > 0 else 0
+    progress: int = int((current * width) / total) if total > 0 else 0
+    threshold_pos: int = int((threshold * width) / total) if total > 0 else 0
 
     # Create the bar
-    bar = list("." * width)
+    bar: list[str] = list("." * width)
 
     # Add threshold marker
     if 0 <= threshold_pos < width:
@@ -96,9 +101,8 @@ def create_progress_bar(
     return f"[{''.join(bar)}] {percentage}%"
 
 
-def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
-    """
-    Update progress display for all speakers in a coordinated way.
+def update_all_progress_displays(speakers_info: Mapping[str, dict[str, Any]]) -> None:
+    """Update progress display for all speakers in a coordinated way.
 
     Args:
         speakers_info: Dictionary mapping speaker IDs to their current track info
@@ -114,39 +118,43 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
     global _last_line_count, _display_started, _log_lines_since_last_display
 
     # Prepare the display content
-    lines = []
+    lines: list[str] = []
 
     # Generate display for each speaker
     for speaker_info in speakers_info.values():
-        current = speaker_info["position"]
-        total = speaker_info["duration"]
+        current: int = speaker_info["position"]
+        total: int = speaker_info["duration"]
 
         # Format time as MM:SS
-        current_time = f"{current // 60:02d}:{current % 60:02d}"
-        total_time = f"{total // 60:02d}:{total % 60:02d}"
+        current_time: str = f"{current // 60:02d}:{current % 60:02d}"
+        total_time: str = f"{total // 60:02d}:{total % 60:02d}"
 
         # Create status lines
-        status = f"{speaker_info['speaker_name']}: {speaker_info['artist']} - {speaker_info['title']} [{speaker_info['state']}]"
-        progress = create_progress_bar(current, total, speaker_info["threshold"])
-        percentage = (current * 100) // total if total > 0 else 0
-        time_display = f"Time: {current_time}/{total_time} ({percentage}%)"
+        status: str = (
+            f"{speaker_info['speaker_name']}: "
+            f"{speaker_info['artist']} - {speaker_info['title']} "
+            f"[{speaker_info['state']}]"
+        )
+        progress: str = create_progress_bar(current, total, speaker_info["threshold"])
+        percentage: int = (current * 100) // total if total > 0 else 0
+        time_display: str = f"Time: {current_time}/{total_time} ({percentage}%)"
 
         # Add this speaker's display
         lines.extend([status, progress, time_display, ""])
 
     # Calculate total lines including header
-    display_lines = ["=== Progress Display ==="] + lines
-    total_lines = len(display_lines)
+    display_lines: list[str] = ["=== Progress Display ===", *lines]
+    total_lines: int = len(display_lines)
 
     if not _display_started:
         # First time display
-        print("\n".join(display_lines), flush=True)
+        print("\n".join(display_lines), flush=True)  # noqa: T201
         _display_started = True
         _last_line_count = total_lines
     else:
         # BEGIN OF IMPORTANT CODE #
-        clean_up_lines = _last_line_count
-        total_move_up = _log_lines_since_last_display + clean_up_lines
+        clean_up_lines: int = _last_line_count
+        total_move_up: int = _log_lines_since_last_display + clean_up_lines
 
         # Move cursor up by total_move_up lines
         sys.stdout.write(f"\033[{total_move_up}A")
@@ -159,7 +167,7 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         # END of IMPORANT CODE #
 
         # Write new display
-        print("\n".join(display_lines), flush=True)
+        print("\n".join(display_lines), flush=True)  # noqa: T201
         _last_line_count = total_lines
 
     # Reset the log line counter

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -14,7 +15,7 @@ LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET")
 # Scrobbling settings
 SCROBBLE_INTERVAL = int(os.getenv("SCROBBLE_INTERVAL", "1"))  # seconds
 SPEAKER_REDISCOVERY_INTERVAL = int(
-    os.getenv("SPEAKER_REDISCOVERY_INTERVAL", "10")
+    os.getenv("SPEAKER_REDISCOVERY_INTERVAL", "10"),
 )  # seconds
 
 # Get and validate scrobble threshold percentage
@@ -39,5 +40,5 @@ missing_vars = [var for var in required_vars if not os.getenv(var)]
 if missing_vars:
     raise ValueError(
         f"Missing required environment variables: {', '.join(missing_vars)}\n"
-        "Please set them in your .env file"
+        "Please set them in your .env file",
     )
