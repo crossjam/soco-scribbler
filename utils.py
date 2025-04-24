@@ -131,33 +131,26 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         percentage = (current * 100) // total if total > 0 else 0
         time_display = f"Time: {current_time}/{total_time} ({percentage}%)"
 
-        # Add this speaker's display (with single newline after)
+        # Add this speaker's display
         lines.extend([status, progress, time_display, ""])
 
-    # Count total lines we'll display:
-    # 1 newline + 1 header + 1 newline + content lines + 1 final newline
-    total_lines = 4 + len(lines)
+    # Calculate total lines including header
+    display_lines = ["=== Progress Display ==="] + lines
+    total_lines = len(display_lines)
 
-    # Initial display setup
     if not _display_started:
-        # Move past any existing log lines
-        if _log_lines_since_last_display > 0:
-            sys.stdout.write("\n")  # Add extra newline after logs
-        sys.stdout.write("\n")  # Initial newline
-        sys.stdout.write("=== Progress Display ===\n")  # Header with newline
-        sys.stdout.write("\n".join(lines))  # Content
-        sys.stdout.write("\n")  # Final newline
-        sys.stdout.flush()
+        # First time display
+        print("\n".join(display_lines), flush=True)
         _display_started = True
         _last_line_count = total_lines
     else:
         # BEGIN OF IMPORTANT CODE #
-        clean_up_lines = _last_line_count - len(speakers_info)
+        clean_up_lines = _last_line_count
         total_move_up = _log_lines_since_last_display + clean_up_lines
 
         # Move cursor up by total_move_up lines
         sys.stdout.write(f"\033[{total_move_up}A")
-        # Clear only clean_up_lines number of lines
+        # Clear all previous display lines
         for _ in range(clean_up_lines):
             sys.stdout.write("\033[K")  # Clear current line
             sys.stdout.write("\033[1B")  # Move down 1 line
@@ -165,17 +158,9 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         sys.stdout.write(f"\033[{clean_up_lines}A")
         # END of IMPORANT CODE #
 
-        # Add extra newline after any new log messages
-        if _log_lines_since_last_display > 0:
-            sys.stdout.write("\n")
-
-        # Write everything with explicit newlines
-        sys.stdout.write("\n")  # Initial newline
-        sys.stdout.write("=== Progress Display ===\n")  # Header with newline
-        sys.stdout.write("\n".join(lines))  # Content
-        sys.stdout.write("\n")  # Final newline
-        sys.stdout.flush()
+        # Write new display
+        print("\n".join(display_lines), flush=True)
         _last_line_count = total_lines
 
-    # Reset the log line counter after updating display
+    # Reset the log line counter
     reset_log_line_counter()
