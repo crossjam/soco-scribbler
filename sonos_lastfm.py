@@ -42,6 +42,14 @@ class SonosLastFMScrobbler:
 
     def get_speaker_info(self, speaker) -> Optional[Dict]:
         try:
+            # First check if the speaker is actually playing
+            transport_info = speaker.get_current_transport_info()
+            if transport_info["current_transport_state"] != "PLAYING":
+                logger.info(
+                    f"Speaker {speaker.player_name} is not playing (state: {transport_info['current_transport_state']})"
+                )
+                return None
+
             info = speaker.get_current_track_info()
             if not info or not info.get("title") or not info.get("artist"):
                 return None
