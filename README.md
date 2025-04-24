@@ -4,11 +4,54 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
 
 ## Features
 
-- Automatically detects Sonos speakers on your network
-- Scrobbles tracks to Last.fm
-- Prevents duplicate scrobbles
-- Handles multiple speakers
-- Error handling and logging
+- Automatic Sonos speaker discovery on your network
+- Real-time track monitoring and scrobbling
+- Smart duplicate scrobble prevention
+- Multi-speaker support
+- Comprehensive error handling and logging
+- Local data persistence for tracking scrobble history
+- Configurable scrobble interval and threshold
+
+## Detailed Features
+
+### Scrobbling Logic
+
+The script follows configurable scrobbling rules:
+- A track is scrobbled when either:
+  - Configured percentage of the track has been played (default: 25%, range: 0-100), OR
+  - 4 minutes (240 seconds) of the track have been played
+- For repeated plays of the same track:
+  - Enforces a 30-minute minimum interval between scrobbles of the same track
+  - Prevents duplicate scrobbles during continuous play
+
+### Track Monitoring
+
+- Continuously monitors all Sonos speakers on the network
+- Tracks playback position and duration for each speaker
+- Only scrobbles tracks that are actually playing (ignores paused/stopped states)
+- Requires both artist and title information to be present for scrobbling
+
+### Data Storage
+
+- Maintains persistent storage in the `./data` directory:
+  - `last_scrobbled.json`: Records of recently scrobbled tracks
+  - `currently_playing.json`: Current playback state for each speaker
+- Prevents data loss across script restarts
+
+### Error Handling
+
+- Robust error handling for network issues
+- Graceful recovery from Last.fm API failures
+- Detailed logging of all operations and errors
+- Speaker connection loss handling
+
+### Logging
+
+- Detailed logging with timestamps
+- Different log levels for various operations:
+  - INFO: Normal operations, scrobble success
+  - WARNING: Non-critical issues (e.g., no speakers found)
+  - ERROR: Critical issues requiring attention
 
 ## Setup
 
@@ -29,7 +72,9 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
      - `LASTFM_PASSWORD`: Your Last.fm password
      - `LASTFM_API_KEY`: Your Last.fm API key
      - `LASTFM_API_SECRET`: Your Last.fm API secret
-   - Optionally adjust `SCROBBLE_INTERVAL` (default: 30 seconds)
+   - Optionally adjust:
+     - `SCROBBLE_INTERVAL` (default: 30 seconds)
+     - `SCROBBLE_THRESHOLD_PERCENT` (default: 25%, must be between 0 and 100)
 
 ## Usage
 
@@ -39,14 +84,22 @@ python sonos_lastfm.py
 ```
 
 The script will:
-1. Discover Sonos speakers on your network
-2. Monitor currently playing tracks
-3. Scrobble new tracks to Last.fm
-4. Log all activities to the console
+1. Create necessary data directories
+2. Discover Sonos speakers on your network
+3. Monitor currently playing tracks
+4. Scrobble new tracks to Last.fm according to the scrobbling rules
+5. Log all activities to the console
 
 ## Requirements
 
 - Python 3.6+
 - Sonos speakers on your network
 - Last.fm account
-- Last.fm API credentials 
+- Last.fm API credentials
+
+## Troubleshooting
+
+Common issues and solutions:
+- No speakers found: Ensure your computer is on the same network as your Sonos system
+- Scrobbling not working: Check your Last.fm credentials in config.py
+- Missing scrobbles: Verify that both artist and title information are available for the track 
