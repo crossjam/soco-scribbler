@@ -5,9 +5,9 @@ Utility functions for the Sonos Last.fm scrobbler.
 import sys
 from typing import Dict
 
-# Keep track of display state
-_last_display_lines = 0
-_display_initialized = False
+# Track display state
+_last_line_count = 0
+_display_started = False
 
 
 def create_progress_bar(
@@ -67,14 +67,12 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
             - threshold: int (seconds)
             - state: str
     """
-    global _last_display_lines, _display_initialized
+    global _last_line_count, _display_started
 
-    # Prepare all output first
-    output_lines = []
+    # Prepare the display content
+    lines = []
 
-    # Always include the separator
-    output_lines.extend(["", "=== Progress Display ===", ""])
-
+    # Generate display for each speaker
     for speaker_info in speakers_info.values():
         current = speaker_info["position"]
         total = speaker_info["duration"]
@@ -89,25 +87,31 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         percentage = (current * 100) // total if total > 0 else 0
         time_display = f"Time: {current_time}/{total_time} ({percentage}%)"
 
-        output_lines.extend([status, progress, time_display, ""])
+        # Add this speaker's display (with single newline after)
+        lines.extend([status, progress, time_display, ""])
 
-    # First time initialization
-    if not _display_initialized and output_lines:
-        sys.stdout.write("\n".join(output_lines))
-        sys.stdout.write("\n")
+    # Count total lines we'll display:
+    # 1 newline + 1 header + 1 newline + content lines + 1 final newline
+    total_lines = 4 + len(lines)
+
+    # Initial display setup
+    if not _display_started:
+        sys.stdout.write("\n")  # Initial newline
+        sys.stdout.write("=== Progress Display ===\n")  # Header with newline
+        sys.stdout.write("\n".join(lines))  # Content
+        sys.stdout.write("\n")  # Final newline
         sys.stdout.flush()
-        _last_display_lines = len(output_lines) + 1
-        _display_initialized = True
-        return
-
-    # Regular update
-    if _last_display_lines > 0:
-        # Move up to the start of our display area
-        sys.stdout.write(f"\033[{_last_display_lines}A")
-        # Clear the entire display area
+        _display_started = True
+        _last_line_count = total_lines
+    else:
+        # Move cursor up to the start of the previous display
+        sys.stdout.write(f"\033[{_last_line_count-len(speakers_info)}A")
+        # Clear from cursor to end of screen
         sys.stdout.write("\033[J")
-        # Write the new display
-        sys.stdout.write("\n".join(output_lines))
-        sys.stdout.write("\n")
+        # Write everything with explicit newlines
+        sys.stdout.write("\n")  # Initial newline
+        sys.stdout.write("=== Progress Display ===\n")  # Header with newline
+        sys.stdout.write("\n".join(lines))  # Content
+        sys.stdout.write("\n")  # Final newline
         sys.stdout.flush()
-        _last_display_lines = len(output_lines) + 1
+        _last_line_count = total_lines
