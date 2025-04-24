@@ -40,6 +40,55 @@ The script follows configurable scrobbling rules:
 
 ## Setup
 
+### Option 1: Local Development Setup (Recommended for Mac)
+
+1. Install `uv` (Python package installer):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Setup and run using Make commands:
+   ```bash
+   # Setup Python environment with uv
+   make setup
+
+   # Install dependencies
+   make install
+
+   # For development, install additional tools (optional)
+   make install-dev
+
+   # Run the scrobbler
+   make run
+   ```
+
+   Run `make help` to see all available commands.
+
+### Option 2: Docker Setup (Recommended for Linux)
+
+> Note: Docker setup is not recommended on macOS due to network mode limitations affecting Sonos discovery.
+
+1. Create a `.env` file with your Last.fm credentials:
+   ```bash
+   LASTFM_USERNAME=your_username
+   LASTFM_PASSWORD=your_password
+   LASTFM_API_KEY=your_api_key
+   LASTFM_API_SECRET=your_api_secret
+   ```
+
+2. Run with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+   This will:
+   - Build the container with all dependencies
+   - Run in network host mode for Sonos discovery
+   - Persist data across container restarts
+   - Automatically restart on failure
+
+### Manual Setup (Alternative)
+
 1. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
