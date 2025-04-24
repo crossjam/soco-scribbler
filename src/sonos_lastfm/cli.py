@@ -13,8 +13,6 @@ from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
 
-from .sonos_lastfm import SonosScrobbler
-
 # Create Typer app instance
 app = typer.Typer(
     name="sonos-lastfm",
@@ -361,6 +359,9 @@ def run(
     os.environ["SCROBBLE_INTERVAL"] = str(scrobble_interval)
     os.environ["SPEAKER_REDISCOVERY_INTERVAL"] = str(rediscovery_interval)
     os.environ["SCROBBLE_THRESHOLD_PERCENT"] = str(threshold)
+
+    # Import SonosScrobbler only when needed
+    from .sonos_lastfm import SonosScrobbler
 
     # Run the scrobbler
     scrobbler = SonosScrobbler()

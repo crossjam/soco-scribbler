@@ -3,6 +3,8 @@
 venv/
 ENV/
 
+.DS_Store
+
 # Python cache files
 .ruff_cache/
 __pycache__/
