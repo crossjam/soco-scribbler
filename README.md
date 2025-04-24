@@ -1,5 +1,7 @@
 # Sonos to Last.fm Scrobbler
 
+![sonos lastfm](https://github.com/user-attachments/assets/6c84174d-a927-4801-8800-e2343d1646d7)
+
 This script automatically scrobbles music playing on your Sonos speakers to Last.fm.
 
 ## Features
@@ -8,9 +10,7 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
 - Real-time track monitoring and scrobbling
 - Smart duplicate scrobble prevention
 - Multi-speaker support
-- Comprehensive error handling and logging
 - Local data persistence for tracking scrobble history
-- Configurable scrobble interval and threshold
 
 ## Detailed Features
 
@@ -37,21 +37,6 @@ The script follows configurable scrobbling rules:
   - `last_scrobbled.json`: Records of recently scrobbled tracks
   - `currently_playing.json`: Current playback state for each speaker
 - Prevents data loss across script restarts
-
-### Error Handling
-
-- Robust error handling for network issues
-- Graceful recovery from Last.fm API failures
-- Detailed logging of all operations and errors
-- Speaker connection loss handling
-
-### Logging
-
-- Detailed logging with timestamps
-- Different log levels for various operations:
-  - INFO: Normal operations, scrobble success
-  - WARNING: Non-critical issues (e.g., no speakers found)
-  - ERROR: Critical issues requiring attention
 
 ## Setup
 
@@ -92,7 +77,7 @@ The script will:
 
 ## Requirements
 
-- Python 3.6+
+- Python 3.11+
 - Sonos speakers on your network
 - Last.fm account
 - Last.fm API credentials
