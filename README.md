@@ -11,36 +11,18 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
 - Smart duplicate scrobble prevention
 - Multi-speaker support
 - Local data persistence for tracking scrobble history
+- Secure credential storage using system keyring
+- Modern CLI interface with interactive setup
 
-## Detailed Features
+## Installation
 
-### Scrobbling Logic
+### Option 1: Install from PyPI (Recommended)
 
-The script follows configurable scrobbling rules:
-- A track is scrobbled when either:
-  - Configured percentage of the track has been played (default: 25%, range: 0-100), OR
-  - 4 minutes (240 seconds) of the track have been played
-- For repeated plays of the same track:
-  - Enforces a 30-minute minimum interval between scrobbles of the same track
-  - Prevents duplicate scrobbles during continuous play
+```bash
+pip install sonos-lastfm
+```
 
-### Track Monitoring
-
-- Continuously monitors all Sonos speakers on the network
-- Tracks playback position and duration for each speaker
-- Only scrobbles tracks that are actually playing (ignores paused/stopped states)
-- Requires both artist and title information to be present for scrobbling
-
-### Data Storage
-
-- Maintains persistent storage in the `./data` directory:
-  - `last_scrobbled.json`: Records of recently scrobbled tracks
-  - `currently_playing.json`: Current playback state for each speaker
-- Prevents data loss across script restarts
-
-## Setup
-
-### Option 1: Local Development Setup (Recommended for Mac)
+### Option 2: Local Development Setup
 
 1. Install `uv` (Python package installer):
    ```bash
@@ -57,14 +39,73 @@ The script follows configurable scrobbling rules:
 
    # For development, install additional tools (optional)
    make install-dev
-
-   # Run the scrobbler
-   make run
    ```
 
    Run `make help` to see all available commands.
 
-### Option 2: Docker Setup (Recommended for Linux)
+## Usage
+
+### Quick Start
+
+1. Run the interactive setup to securely store your Last.fm credentials:
+   ```bash
+   sonos-lastfm --setup
+   ```
+
+2. Start scrobbling:
+   ```bash
+   sonos-lastfm
+   ```
+
+### Command Line Options
+
+```bash
+sonos-lastfm [OPTIONS]
+
+Options:
+  -u, --username TEXT            Last.fm username
+  -p, --password TEXT           Last.fm password
+  -k, --api-key TEXT           Last.fm API key
+  -s, --api-secret TEXT        Last.fm API secret
+  -i, --interval INTEGER       Scrobbling check interval in seconds [default: 1]
+  -r, --rediscovery INTEGER    Speaker rediscovery interval in seconds [default: 10]
+  -t, --threshold FLOAT        Scrobble threshold percentage [default: 25.0]
+  --setup                      Run interactive setup
+  --help                       Show this message and exit
+```
+
+### Configuration Methods
+
+You can configure the scrobbler in three ways (in order of precedence):
+
+1. Command line arguments:
+   ```bash
+   sonos-lastfm --username "your_username" --api-key "your_api_key"
+   ```
+
+2. Environment variables:
+   ```bash
+   export LASTFM_USERNAME=your_username
+   export LASTFM_PASSWORD=your_password
+   export LASTFM_API_KEY=your_api_key
+   export LASTFM_API_SECRET=your_api_secret
+   export SCROBBLE_INTERVAL=1
+   export SPEAKER_REDISCOVERY_INTERVAL=10
+   export SCROBBLE_THRESHOLD_PERCENT=25
+   
+   sonos-lastfm
+   ```
+
+3. Secure keyring storage (recommended):
+   ```bash
+   # Store credentials securely
+   sonos-lastfm --setup
+   
+   # Run with stored credentials
+   sonos-lastfm
+   ```
+
+### Docker Setup (Linux Only)
 
 > Note: Docker setup is not recommended on macOS due to network mode limitations affecting Sonos discovery.
 
@@ -81,59 +122,33 @@ The script follows configurable scrobbling rules:
    docker-compose up -d
    ```
 
-   This will:
-   - Build the container with all dependencies
-   - Run in network host mode for Sonos discovery
-   - Persist data across container restarts
-   - Automatically restart on failure
+## Scrobbling Rules
 
-### Manual Setup (Alternative)
+The script follows configurable scrobbling rules:
+- A track is scrobbled when either:
+  - Configured percentage of the track has been played (default: 25%, range: 0-100), OR
+  - 4 minutes (240 seconds) of the track have been played
+- For repeated plays of the same track:
+  - Enforces a 30-minute minimum interval between scrobbles of the same track
+  - Prevents duplicate scrobbles during continuous play
 
-1. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Data Storage
 
-2. Get your Last.fm API credentials:
-   - Go to https://www.last.fm/api/account/create
-   - Create a new API account
-   - Note down your API key and API secret
-
-3. Configure the script:
-   - Open `config.py`
-   - Fill in your Last.fm credentials:
-     - `LASTFM_USERNAME`: Your Last.fm username
-     - `LASTFM_PASSWORD`: Your Last.fm password
-     - `LASTFM_API_KEY`: Your Last.fm API key
-     - `LASTFM_API_SECRET`: Your Last.fm API secret
-   - Optionally adjust:
-     - `SCROBBLE_INTERVAL` (default: 30 seconds)
-     - `SCROBBLE_THRESHOLD_PERCENT` (default: 25%, must be between 0 and 100)
-
-## Usage
-
-Run the script:
-```bash
-python sonos_lastfm.py
-```
-
-The script will:
-1. Create necessary data directories
-2. Discover Sonos speakers on your network
-3. Monitor currently playing tracks
-4. Scrobble new tracks to Last.fm according to the scrobbling rules
-5. Log all activities to the console
+- Credentials are stored securely in your system's keyring
+- Scrobble history and currently playing information is stored in:
+  - `~/.config/sonos-lastfm/last_scrobbled.json`
+  - `~/.config/sonos-lastfm/currently_playing.json`
 
 ## Requirements
 
 - Python 3.11+
 - Sonos speakers on your network
-- Last.fm account
-- Last.fm API credentials
+- Last.fm account and API credentials
+  - Get your API credentials at: https://www.last.fm/api/account/create
 
 ## Troubleshooting
 
 Common issues and solutions:
 - No speakers found: Ensure your computer is on the same network as your Sonos system
-- Scrobbling not working: Check your Last.fm credentials in config.py
-- Missing scrobbles: Verify that both artist and title information are available for the track 
+- Scrobbling not working: Check your Last.fm credentials with `sonos-lastfm --setup`
+- Missing scrobbles: Verify that both artist and title information are available for the track

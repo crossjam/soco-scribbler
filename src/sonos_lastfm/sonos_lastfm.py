@@ -14,7 +14,7 @@ if True:  # type checking block
 import pylast  # type: ignore[import-untyped]
 import soco  # type: ignore[import-untyped]
 
-from config import (
+from .config import (
     LASTFM_API_KEY,
     LASTFM_API_SECRET,
     LASTFM_PASSWORD,
@@ -23,7 +23,7 @@ from config import (
     SCROBBLE_THRESHOLD_PERCENT,
     SPEAKER_REDISCOVERY_INTERVAL,
 )
-from utils import custom_print, logger, update_all_progress_displays
+from .utils import custom_print, logger, update_all_progress_displays
 
 # Constants
 SCROBBLE_MIN_TIME: Final[int] = 240  # 4 minutes in seconds
@@ -56,7 +56,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     force=True,  # Ensure we reset any existing handlers
 )
-logger: Final[logging.Logger] = logging.getLogger(__name__)
 
 # Set SoCo logging to INFO
 soco_logger: Final[logging.Logger] = logging.getLogger("soco")
