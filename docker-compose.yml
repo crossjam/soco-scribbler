@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  sonos-lastfm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - sonos_lastfm_data:/app/data
+    restart: always  # Ensures the container restarts automatically
+    network_mode: host  # Important for Sonos discovery on the local network
+
+volumes:
+  sonos_lastfm_data:
+    # This ensures the volume persists across container restarts 
