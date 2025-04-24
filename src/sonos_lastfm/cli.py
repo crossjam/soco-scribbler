@@ -1,12 +1,16 @@
 """Command line interface for Sonos Last.fm scrobbler."""
 
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import keyring
+import pylast
 import rich
 import typer
+from rich.console import Console
+from rich.table import Table
 from rich.prompt import Confirm, Prompt
 
 from .sonos_lastfm import SonosScrobbler
@@ -16,11 +20,13 @@ app = typer.Typer(
     name="sonos-lastfm",
     help="Scrobble your Sonos plays to Last.fm",
     add_completion=False,
+    no_args_is_help=True,  # Show help when no command is provided
 )
 
 # Constants
 APP_NAME = "sonos-lastfm"
 CONFIG_DIR = Path.home() / ".config" / APP_NAME
+CREDENTIAL_KEYS = ["username", "password", "api_key", "api_secret"]
 
 # Ensure config directory exists
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -46,6 +52,18 @@ def store_credential(key: str, value: str) -> None:
         value: The value to store
     """
     keyring.set_password(APP_NAME, key, value)
+
+
+def delete_credential(key: str) -> None:
+    """Delete a credential from the system keyring.
+
+    Args:
+        key: The key to delete
+    """
+    try:
+        keyring.delete_password(APP_NAME, key)
+    except keyring.errors.PasswordDeleteError:
+        pass  # Ignore if credential doesn't exist
 
 
 def get_config_value(
@@ -92,6 +110,153 @@ def interactive_setup() -> None:
     store_credential("api_secret", api_secret)
 
     rich.print("\n[green]✓[/green] Credentials stored securely!")
+
+    # Show account info after setup
+    rich.print("\nTesting connection and showing account information:")
+    show_account_info()
+
+
+@app.command(name="info")
+def show_account_info() -> None:
+    """Show Last.fm account information and your recent scrobbles."""
+    console = Console()
+
+    with console.status("Connecting to Last.fm...") as status:
+        network = get_lastfm_network()
+        if not network:
+            raise typer.Exit(1)
+
+        try:
+            # Get user info
+            status.update("Getting user information...")
+            user = network.get_authenticated_user()
+
+            # Get recent tracks
+            status.update("Fetching recent tracks...")
+            recent_tracks = user.get_recent_tracks(limit=10)  # Get last 10 tracks
+
+            # Get user stats
+            status.update("Fetching user statistics...")
+            playcount = user.get_playcount()
+            reg_timestamp = user.get_registered()
+            registered = datetime.fromtimestamp(int(reg_timestamp), tz=timezone.utc)
+
+            # Create user info table
+            user_table = Table(title="Last.fm User Information")
+            user_table.add_column("Property", style="cyan")
+            user_table.add_column("Value", style="green")
+
+            user_table.add_row("Username", user.get_name())
+            user_table.add_row("Total Scrobbles", str(playcount))
+            user_table.add_row(
+                "Registered Since", registered.strftime("%Y-%m-%d %H:%M:%S UTC")
+            )
+
+            # Create recent tracks table
+            if recent_tracks:
+                tracks_table = Table(
+                    title=f"Last {len(recent_tracks)} Scrobbled Tracks"
+                )
+                tracks_table.add_column("#", style="dim")
+                tracks_table.add_column("Artist", style="cyan")
+                tracks_table.add_column("Title", style="green")
+                tracks_table.add_column("Album", style="blue")
+                tracks_table.add_column("Scrobbled At", style="magenta")
+
+                for idx, track in enumerate(recent_tracks, 1):
+                    scrobbled_at = datetime.fromtimestamp(
+                        int(track.timestamp), tz=timezone.utc
+                    )
+
+                    tracks_table.add_row(
+                        str(idx),
+                        track.track.artist.name,
+                        track.track.title,
+                        track.album or "—",  # Show dash if no album
+                        scrobbled_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    )
+
+            # Print results
+            console.print("\n[green]✓[/green] Successfully connected to Last.fm API!\n")
+            console.print(user_table)
+            if recent_tracks:
+                console.print("\n", tracks_table)
+
+        except pylast.WSError as e:
+            console.print(f"\n[red]Error:[/red] Last.fm API error: {e}")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"\n[red]Error:[/red] Unexpected error: {str(e)}")
+            console.print("[dim]Debug: Full error details:[/dim]")
+            import traceback
+
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+
+
+@app.command(name="show")
+def show_credentials() -> None:
+    """Show stored Last.fm credentials (passwords/secrets masked) and account info."""
+    console = Console()
+    table = Table(title="Stored Credentials")
+
+    table.add_column("Key", style="cyan")
+    table.add_column("Value", style="green")
+
+    for key in CREDENTIAL_KEYS:
+        value = get_stored_credential(key)
+        if value:
+            # Mask sensitive values
+            if key in ["password", "api_secret"]:
+                display_value = "********"
+            else:
+                display_value = value
+            table.add_row(key, display_value)
+        else:
+            table.add_row(key, "[red]not set[/red]")
+
+    console.print(table)
+
+    # If we have all credentials, show account info
+    if all(get_stored_credential(key) for key in CREDENTIAL_KEYS):
+        rich.print("\nShowing account information:")
+        show_account_info()
+
+
+@app.command(name="reset")
+def reset_credentials() -> None:
+    """Remove all stored Last.fm credentials from the system keyring."""
+    if not Confirm.ask("\nAre you sure you want to remove all stored credentials?"):
+        rich.print("Operation cancelled.")
+        return
+
+    for key in CREDENTIAL_KEYS:
+        delete_credential(key)
+
+    rich.print("\n[green]✓[/green] All credentials removed successfully!")
+
+
+@app.command(name="setup")
+def setup_credentials() -> None:
+    """Configure Last.fm credentials (removes existing if any)."""
+    # Check if we have any existing credentials
+    has_credentials = any(get_stored_credential(key) for key in CREDENTIAL_KEYS)
+
+    if has_credentials:
+        if not Confirm.ask(
+            "\nExisting credentials found. Do you want to reconfigure them?"
+        ):
+            rich.print("Operation cancelled.")
+            return
+
+        # Remove existing credentials
+        for key in CREDENTIAL_KEYS:
+            delete_credential(key)
+
+        rich.print("[green]✓[/green] Existing credentials removed.")
+
+    # Run setup
+    interactive_setup()
 
 
 @app.command()
@@ -150,10 +315,14 @@ def run(
     setup: bool = typer.Option(
         False,
         "--setup",
-        help="Run interactive setup",
+        help="Run interactive setup before starting",
     ),
 ) -> None:
-    """Run the Sonos Last.fm scrobbler."""
+    """Start the Sonos scrobbler (requires credentials).
+
+    Monitors your Sonos speakers and scrobbles tracks to Last.fm. Can use stored
+    credentials or accept them via command line options or environment variables.
+    """
     if setup:
         interactive_setup()
         return
@@ -196,6 +365,101 @@ def run(
     # Run the scrobbler
     scrobbler = SonosScrobbler()
     scrobbler.run()
+
+
+def get_lastfm_network() -> Optional[pylast.LastFMNetwork]:
+    """Initialize Last.fm network with stored credentials.
+
+    Returns:
+        Initialized Last.fm network or None if credentials are missing
+    """
+    username = get_stored_credential("username")
+    password = get_stored_credential("password")
+    api_key = get_stored_credential("api_key")
+    api_secret = get_stored_credential("api_secret")
+
+    if not all([username, password, api_key, api_secret]):
+        rich.print(
+            "[red]Error:[/red] Missing credentials. Please run 'sonos-lastfm setup' to configure."
+        )
+        return None
+
+    try:
+        return pylast.LastFMNetwork(
+            api_key=api_key,
+            api_secret=api_secret,
+            username=username,
+            password_hash=pylast.md5(password),
+        )
+    except Exception as e:
+        rich.print(f"[red]Error:[/red] Failed to initialize Last.fm network: {e}")
+        return None
+
+
+@app.command(name="recent")
+def show_recent_tracks(
+    limit: int = typer.Option(
+        10,
+        "--limit",
+        "-n",
+        help="Number of recent tracks to show",
+        min=1,
+        max=50,
+    ),
+) -> None:
+    """Show recently scrobbled tracks."""
+    console = Console()
+
+    with console.status("Connecting to Last.fm...") as status:
+        network = get_lastfm_network()
+        if not network:
+            raise typer.Exit(1)
+
+        try:
+            status.update("Getting authenticated user...")
+            user = network.get_authenticated_user()
+
+            status.update(f"Fetching last {limit} tracks...")
+            recent_tracks = user.get_recent_tracks(limit=limit)
+
+            if not recent_tracks:
+                console.print("[yellow]No recent tracks found.[/yellow]")
+                return
+
+            # Create tracks table
+            tracks_table = Table(title=f"Last {len(recent_tracks)} Scrobbled Tracks")
+            tracks_table.add_column("#", style="dim")
+            tracks_table.add_column("Artist", style="cyan")
+            tracks_table.add_column("Title", style="green")
+            tracks_table.add_column("Album", style="blue")
+            tracks_table.add_column("Scrobbled At", style="magenta")
+
+            status.update("Processing track information...")
+            for idx, track in enumerate(recent_tracks, 1):
+                scrobbled_at = datetime.fromtimestamp(
+                    int(track.timestamp), tz=timezone.utc
+                )
+
+                tracks_table.add_row(
+                    str(idx),
+                    track.track.artist.name,
+                    track.track.title,
+                    track.album or "—",  # Show dash if no album
+                    scrobbled_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                )
+
+            console.print(tracks_table)
+
+        except pylast.WSError as e:
+            console.print(f"\n[red]Error:[/red] Last.fm API error: {e}")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"\n[red]Error:[/red] Unexpected error: {str(e)}")
+            console.print("[dim]Debug: Full error details:[/dim]")
+            import traceback
+
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
 
 
 def main() -> None:

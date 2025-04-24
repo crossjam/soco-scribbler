@@ -60,7 +60,14 @@ pip install sonos-lastfm
 ### Command Line Options
 
 ```bash
-sonos-lastfm [OPTIONS]
+sonos-lastfm [OPTIONS] COMMAND [ARGS]...
+
+Commands:
+  run      Run the Sonos Last.fm scrobbler (default if no command specified)
+  show     Show stored credentials (passwords/secrets masked)
+  reset    Remove all stored credentials
+  resetup  Remove existing credentials and run setup again
+  test     Test Last.fm API connectivity and show user information
 
 Options:
   -u, --username TEXT            Last.fm username
@@ -73,6 +80,43 @@ Options:
   --setup                      Run interactive setup
   --help                       Show this message and exit
 ```
+
+### Credential Management
+
+The CLI provides several commands to manage your Last.fm credentials:
+
+1. Show stored credentials:
+   ```bash
+   sonos-lastfm show
+   ```
+   This will display your stored credentials with sensitive values masked.
+
+2. Reset (remove) all credentials:
+   ```bash
+   sonos-lastfm reset
+   ```
+   This will remove all stored credentials from your system keyring.
+
+3. Reconfigure credentials:
+   ```bash
+   sonos-lastfm resetup
+   ```
+   This will remove existing credentials and run the interactive setup again.
+
+### Testing Last.fm Connection
+
+Before starting the scrobbler, you can test your Last.fm API connection:
+
+```bash
+sonos-lastfm test
+```
+
+This will:
+1. Test the connection to Last.fm API
+2. Show your user information (username, total scrobbles, registration date)
+3. Display your most recent scrobbled track
+
+Use this command to verify your credentials are working correctly before starting the scrobbler.
 
 ### Configuration Methods
 
