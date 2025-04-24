@@ -19,6 +19,7 @@ from config import (
     LASTFM_API_SECRET,
     SCROBBLE_INTERVAL,
     SCROBBLE_THRESHOLD_PERCENT,
+    SPEAKER_REDISCOVERY_INTERVAL,
 )
 from utils import update_all_progress_displays
 
@@ -85,15 +86,41 @@ class SonosScrobbler:
     def discover_speakers(self):
         """Discover Sonos speakers on the network."""
         try:
-            self.speakers = list(discover())
-            if self.speakers:
-                logger.info(f"Found {len(self.speakers)} Sonos speaker(s)")
-                for speaker in self.speakers:
-                    logger.info(
-                        f"Speaker found: {speaker.player_name} ({speaker.ip_address})"
-                    )
-            else:
+            new_speakers = list(discover())
+
+            # Get sets of speaker IDs for comparison
+            old_speaker_ids = {s.ip_address for s in self.speakers}
+            new_speaker_ids = {s.ip_address for s in new_speakers}
+
+            # Detect changes
+            added_speakers = new_speaker_ids - old_speaker_ids
+            removed_speakers = old_speaker_ids - new_speaker_ids
+
+            # Only log if there are changes
+            if added_speakers or removed_speakers:
+                if added_speakers:
+                    for speaker in new_speakers:
+                        if speaker.ip_address in added_speakers:
+                            logger.info(
+                                f"New speaker found: {speaker.player_name} ({speaker.ip_address})"
+                            )
+
+                if removed_speakers:
+                    for speaker in self.speakers:
+                        if speaker.ip_address in removed_speakers:
+                            logger.info(
+                                f"Speaker removed: {speaker.player_name} ({speaker.ip_address})"
+                            )
+
+                logger.info(f"Updated speaker count: {len(new_speakers)}")
+
+            # Update the speakers list
+            self.speakers = new_speakers
+
+            # Log warning only if we have no speakers at all
+            if not self.speakers:
                 logger.warning("No Sonos speakers found")
+
         except Exception as e:
             logger.error(f"Error discovering speakers: {e}")
             self.speakers = []
@@ -197,9 +224,16 @@ class SonosScrobbler:
     def monitor_speakers(self):
         """Main loop to monitor speakers and scrobble tracks."""
         logger.info("Starting Sonos Last.fm Scrobbler")
-        display_info = {}  # Track display info for all active speakers
+        display_info = {}
+        last_discovery_time = 0
         try:
             while True:
+                # Check if it's time to rediscover speakers
+                current_time = time.time()
+                if current_time - last_discovery_time >= SPEAKER_REDISCOVERY_INTERVAL:
+                    self.discover_speakers()
+                    last_discovery_time = current_time
+
                 display_info.clear()  # Reset display info each iteration
 
                 for speaker in self.speakers:

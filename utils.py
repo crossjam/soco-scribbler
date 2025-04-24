@@ -5,6 +5,10 @@ Utility functions for the Sonos Last.fm scrobbler.
 import sys
 from typing import Dict
 
+# Keep track of display state
+_last_display_lines = 0
+_display_initialized = False
+
 
 def create_progress_bar(
     current: int, total: int, threshold: int, width: int = 50
@@ -63,13 +67,14 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
             - threshold: int (seconds)
             - state: str
     """
-    # First, clear the entire display area
-    if speakers_info:
-        # 3 lines per speaker (status, progress, time)
-        total_lines = len(speakers_info) * 3
-        sys.stdout.write(f"\033[{total_lines}A\033[J")
+    global _last_display_lines, _display_initialized
 
-    # Then update each speaker's display in order
+    # Prepare all output first
+    output_lines = []
+
+    # Always include the separator
+    output_lines.extend(["", "=== Progress Display ===", ""])
+
     for speaker_info in speakers_info.values():
         current = speaker_info["position"]
         total = speaker_info["duration"]
@@ -84,7 +89,25 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         percentage = (current * 100) // total if total > 0 else 0
         time_display = f"Time: {current_time}/{total_time} ({percentage}%)"
 
-        # Write display for this speaker
-        output = f"{status}\n{progress}\n{time_display}\n"
-        sys.stdout.write(output)
+        output_lines.extend([status, progress, time_display, ""])
+
+    # First time initialization
+    if not _display_initialized and output_lines:
+        sys.stdout.write("\n".join(output_lines))
+        sys.stdout.write("\n")
         sys.stdout.flush()
+        _last_display_lines = len(output_lines) + 1
+        _display_initialized = True
+        return
+
+    # Regular update
+    if _last_display_lines > 0:
+        # Move up to the start of our display area
+        sys.stdout.write(f"\033[{_last_display_lines}A")
+        # Clear the entire display area
+        sys.stdout.write("\033[J")
+        # Write the new display
+        sys.stdout.write("\n".join(output_lines))
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+        _last_display_lines = len(output_lines) + 1

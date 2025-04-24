@@ -13,6 +13,9 @@ LASTFM_API_SECRET = os.getenv("LASTFM_API_SECRET")
 
 # Scrobbling settings
 SCROBBLE_INTERVAL = int(os.getenv("SCROBBLE_INTERVAL", "1"))  # seconds
+SPEAKER_REDISCOVERY_INTERVAL = int(
+    os.getenv("SPEAKER_REDISCOVERY_INTERVAL", "10")
+)  # seconds
 
 # Get and validate scrobble threshold percentage
 SCROBBLE_THRESHOLD_PERCENT = float(os.getenv("SCROBBLE_THRESHOLD_PERCENT") or "25")
