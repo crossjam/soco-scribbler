@@ -14,15 +14,7 @@ if True:  # type checking block
 import pylast  # type: ignore[import-untyped]
 import soco  # type: ignore[import-untyped]
 
-from .config import (
-    LASTFM_API_KEY,
-    LASTFM_API_SECRET,
-    LASTFM_PASSWORD,
-    LASTFM_USERNAME,
-    SCROBBLE_INTERVAL,
-    SCROBBLE_THRESHOLD_PERCENT,
-    SPEAKER_REDISCOVERY_INTERVAL,
-)
+from .config import get_config
 from .utils import custom_print, logger, update_all_progress_displays
 
 # Constants
@@ -89,27 +81,41 @@ class SonosScrobbler:
 
     def __init__(self) -> None:
         """Initialize the scrobbler with Last.fm credentials and speaker discovery."""
-        self.data_dir: Final[Path] = DATA_DIR
-        self.last_scrobbled_file: Final[Path] = LAST_SCROBBLED_FILE
-        self.currently_playing_file: Final[Path] = CURRENTLY_PLAYING_FILE
+        # Get validated config
+        config = get_config()
+
+        self.data_dir: Final[Path] = config["DATA_DIR"]
+        self.last_scrobbled_file: Final[Path] = self.data_dir / "last_scrobbled.json"
+        self.currently_playing_file: Final[Path] = (
+            self.data_dir / "currently_playing.json"
+        )
 
         # Create data directory if it doesn't exist
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize Last.fm network
         self.network: Final[pylast.LastFMNetwork] = pylast.LastFMNetwork(
-            api_key=assert_not_none(LASTFM_API_KEY, "LASTFM_API_KEY"),
-            api_secret=assert_not_none(LASTFM_API_SECRET, "LASTFM_API_SECRET"),
-            username=assert_not_none(LASTFM_USERNAME, "LASTFM_USERNAME"),
+            api_key=assert_not_none(config["LASTFM_API_KEY"], "LASTFM_API_KEY"),
+            api_secret=assert_not_none(
+                config["LASTFM_API_SECRET"], "LASTFM_API_SECRET"
+            ),
+            username=assert_not_none(config["LASTFM_USERNAME"], "LASTFM_USERNAME"),
             password_hash=pylast.md5(
-                assert_not_none(LASTFM_PASSWORD, "LASTFM_PASSWORD")
+                assert_not_none(config["LASTFM_PASSWORD"], "LASTFM_PASSWORD")
             ),
         )
 
+        # Store config values we'll need later
+        self.scrobble_interval = config["SCROBBLE_INTERVAL"]
+        self.speaker_rediscovery_interval = config["SPEAKER_REDISCOVERY_INTERVAL"]
+        self.scrobble_threshold_percent = config["SCROBBLE_THRESHOLD_PERCENT"]
+
         # Load or initialize tracking data
-        self.last_scrobbled: dict[str, str] = self.load_json(LAST_SCROBBLED_FILE, {})
+        self.last_scrobbled: dict[str, str] = self.load_json(
+            self.last_scrobbled_file, {}
+        )
         self.currently_playing: dict[str, dict[str, Any]] = self.load_json(
-            CURRENTLY_PLAYING_FILE,
+            self.currently_playing_file,
             {},
         )
         self.previous_tracks: dict[str, dict[str, Any]] = {}
@@ -235,7 +241,7 @@ class SonosScrobbler:
             position: int = current_track.get("position", 0)
             duration: int = current_track.get("duration", 0)
 
-            threshold_decimal: float = SCROBBLE_THRESHOLD_PERCENT / 100.0
+            threshold_decimal: float = self.scrobble_threshold_percent / 100.0
             return (position >= duration * threshold_decimal) or (
                 position >= SCROBBLE_MIN_TIME
             )
@@ -324,7 +330,7 @@ class SonosScrobbler:
             # Update last scrobbled time
             track_id: str = f"{track_info['artist']}-{track_info['title']}"
             self.last_scrobbled[track_id] = datetime.now(UTC).isoformat()
-            self.save_json(LAST_SCROBBLED_FILE, self.last_scrobbled)
+            self.save_json(self.last_scrobbled_file, self.last_scrobbled)
 
             custom_print(f"Scrobbled: {track_info['artist']} - {track_info['title']}")
         except Exception:
@@ -340,7 +346,10 @@ class SonosScrobbler:
             while True:
                 # Check if it's time to rediscover speakers
                 current_time: float = time.time()
-                if current_time - last_discovery_time >= SPEAKER_REDISCOVERY_INTERVAL:
+                if (
+                    current_time - last_discovery_time
+                    >= self.speaker_rediscovery_interval
+                ):
                     self.discover_speakers()
                     last_discovery_time = current_time
 
@@ -386,11 +395,15 @@ class SonosScrobbler:
 
                         # Update currently playing info
                         self.currently_playing[speaker_id] = track_info
-                        self.save_json(CURRENTLY_PLAYING_FILE, self.currently_playing)
+                        self.save_json(
+                            self.currently_playing_file, self.currently_playing
+                        )
 
                         # Prepare display info for this speaker
                         threshold: int = int(
-                            track_info["duration"] * SCROBBLE_THRESHOLD_PERCENT / 100,
+                            track_info["duration"]
+                            * self.scrobble_threshold_percent
+                            / 100,
                         )
                         display_info[speaker_id] = {
                             "speaker_name": speaker.player_name,
@@ -419,7 +432,7 @@ class SonosScrobbler:
                 if display_info:
                     update_all_progress_displays(display_info)
 
-                time.sleep(SCROBBLE_INTERVAL)
+                time.sleep(self.scrobble_interval)
         except KeyboardInterrupt:
             custom_print("\nShutting down...")  # Add newline before shutdown message
         except Exception:

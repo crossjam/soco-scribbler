@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sonos-lastfm"
-version = "0.1.3"
+version = "0.1.5"
 description = "Automatically scrobble music playing on your Sonos speakers to Last.fm"
 readme = "README.md"
 authors = [
@@ -49,7 +49,7 @@ include = [
 packages = ["src/sonos_lastfm"]
 
 [tool.mypy]
-python_version = "0.1.3"
+python_version = "0.1.5"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
