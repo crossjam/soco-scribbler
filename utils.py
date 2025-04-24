@@ -4,10 +4,54 @@ Utility functions for the Sonos Last.fm scrobbler.
 
 import sys
 from typing import Dict
+import logging
 
 # Track display state
 _last_line_count = 0
 _display_started = False
+_log_lines_since_last_display = 0
+
+
+class LogLineCounter(logging.Handler):
+    def emit(self, record):
+        global _log_lines_since_last_display
+        _log_lines_since_last_display += 1
+
+
+# Add our custom handler to the root logger
+logging.getLogger().addHandler(LogLineCounter())
+
+
+def custom_print(message: str, level: str = "INFO") -> None:
+    """
+    Custom print function that tracks lines and formats output consistently.
+
+    Args:
+        message: The message to print
+        level: The log level (INFO, WARNING, ERROR, etc.)
+    """
+    global _log_lines_since_last_display
+
+    # Count how many newlines are in the message
+    newline_count = message.count("\n")
+
+    # Format the message with timestamp and level
+    timestamp = logging.Formatter("%(asctime)s").format(
+        logging.LogRecord("", 0, "", 0, None, None, None)
+    )
+    formatted_message = f"{timestamp[:-4]} - {level} - {message}"
+
+    # Print the message
+    print(formatted_message, flush=True)
+
+    # Update the line counter - add 1 for the print itself plus any additional newlines in the message
+    _log_lines_since_last_display += 1 + newline_count
+
+
+def reset_log_line_counter():
+    """Reset the counter for log lines since last display update."""
+    global _log_lines_since_last_display
+    _log_lines_since_last_display = 0
 
 
 def create_progress_bar(
@@ -67,7 +111,7 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
             - threshold: int (seconds)
             - state: str
     """
-    global _last_line_count, _display_started
+    global _last_line_count, _display_started, _log_lines_since_last_display
 
     # Prepare the display content
     lines = []
@@ -96,6 +140,9 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
 
     # Initial display setup
     if not _display_started:
+        # Move past any existing log lines
+        if _log_lines_since_last_display > 0:
+            sys.stdout.write("\n")  # Add extra newline after logs
         sys.stdout.write("\n")  # Initial newline
         sys.stdout.write("=== Progress Display ===\n")  # Header with newline
         sys.stdout.write("\n".join(lines))  # Content
@@ -104,10 +151,24 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         _display_started = True
         _last_line_count = total_lines
     else:
-        # Move cursor up to the start of the previous display
-        sys.stdout.write(f"\033[{_last_line_count-len(speakers_info)}A")
-        # Clear from cursor to end of screen
-        sys.stdout.write("\033[J")
+        # BEGIN OF IMPORTANT CODE #
+        clean_up_lines = _last_line_count - len(speakers_info)
+        total_move_up = _log_lines_since_last_display + clean_up_lines
+
+        # Move cursor up by total_move_up lines
+        sys.stdout.write(f"\033[{total_move_up}A")
+        # Clear only clean_up_lines number of lines
+        for _ in range(clean_up_lines):
+            sys.stdout.write("\033[K")  # Clear current line
+            sys.stdout.write("\033[1B")  # Move down 1 line
+        # Move back to start position
+        sys.stdout.write(f"\033[{clean_up_lines}A")
+        # END of IMPORANT CODE #
+
+        # Add extra newline after any new log messages
+        if _log_lines_since_last_display > 0:
+            sys.stdout.write("\n")
+
         # Write everything with explicit newlines
         sys.stdout.write("\n")  # Initial newline
         sys.stdout.write("=== Progress Display ===\n")  # Header with newline
@@ -115,3 +176,6 @@ def update_all_progress_displays(speakers_info: Dict[str, Dict]) -> None:
         sys.stdout.write("\n")  # Final newline
         sys.stdout.flush()
         _last_line_count = total_lines
+
+    # Reset the log line counter after updating display
+    reset_log_line_counter()

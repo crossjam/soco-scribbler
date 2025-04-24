@@ -21,18 +21,30 @@ from config import (
     SCROBBLE_THRESHOLD_PERCENT,
     SPEAKER_REDISCOVERY_INTERVAL,
 )
-from utils import update_all_progress_displays
+from utils import update_all_progress_displays, custom_print
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,  # Changed to DEBUG level
+    level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
+    force=True,  # Ensure we reset any existing handlers
 )
 logger = logging.getLogger(__name__)
 
 # Set SoCo logging to INFO
 soco_logger = logging.getLogger("soco")
 soco_logger.setLevel(logging.INFO)
+
+# Completely suppress pylast HTTP request logging
+pylast_logger = logging.getLogger("pylast")
+pylast_logger.setLevel(logging.WARNING)  # Only show warnings and errors
+pylast_logger.addHandler(logging.NullHandler())  # Add null handler
+pylast_logger.propagate = False  # Prevent propagation to root logger completely
+
+# Also suppress httpx logging which pylast uses internally
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.WARNING)
+httpx_logger.propagate = False
 
 # Storage paths - using local data directory
 DATA_DIR = Path("data")
@@ -60,6 +72,7 @@ class SonosScrobbler:
         # Load or initialize tracking data
         self.last_scrobbled = self.load_json(LAST_SCROBBLED_FILE, {})
         self.currently_playing = self.load_json(CURRENTLY_PLAYING_FILE, {})
+        self.previous_tracks = {}  # Track previous tracks for each speaker
 
         # Initialize Sonos discovery
         self.speakers = []
@@ -101,28 +114,28 @@ class SonosScrobbler:
                 if added_speakers:
                     for speaker in new_speakers:
                         if speaker.ip_address in added_speakers:
-                            logger.info(
+                            custom_print(
                                 f"New speaker found: {speaker.player_name} ({speaker.ip_address})"
                             )
 
                 if removed_speakers:
                     for speaker in self.speakers:
                         if speaker.ip_address in removed_speakers:
-                            logger.info(
+                            custom_print(
                                 f"Speaker removed: {speaker.player_name} ({speaker.ip_address})"
                             )
 
-                logger.info(f"Updated speaker count: {len(new_speakers)}")
+                custom_print(f"Updated speaker count: {len(new_speakers)}")
 
             # Update the speakers list
             self.speakers = new_speakers
 
             # Log warning only if we have no speakers at all
             if not self.speakers:
-                logger.warning("No Sonos speakers found")
+                custom_print("No Sonos speakers found", "WARNING")
 
         except Exception as e:
-            logger.error(f"Error discovering speakers: {e}")
+            custom_print(f"Error discovering speakers: {e}", "ERROR")
             self.speakers = []
 
     def should_scrobble(self, track_info: dict, speaker_id: str) -> bool:
@@ -217,13 +230,13 @@ class SonosScrobbler:
             self.last_scrobbled[track_id] = datetime.now().isoformat()
             self.save_json(LAST_SCROBBLED_FILE, self.last_scrobbled)
 
-            logger.info(f"Scrobbled: {track_info['artist']} - {track_info['title']}")
+            custom_print(f"Scrobbled: {track_info['artist']} - {track_info['title']}")
         except Exception as e:
-            logger.error(f"Error scrobbling track: {e}")
+            custom_print(f"Error scrobbling track: {e}", "ERROR")
 
     def monitor_speakers(self):
         """Main loop to monitor speakers and scrobble tracks."""
-        logger.info("Starting Sonos Last.fm Scrobbler")
+        custom_print("Starting Sonos Last.fm Scrobbler")
         display_info = {}
         last_discovery_time = 0
         try:
@@ -243,6 +256,25 @@ class SonosScrobbler:
 
                         if not track_info:
                             continue
+
+                        # Check if this is a new track
+                        prev_track = self.previous_tracks.get(speaker_id, {})
+                        current_track_id = f"{track_info.get('artist', '')}-{track_info.get('title', '')}"
+                        prev_track_id = f"{prev_track.get('artist', '')}-{prev_track.get('title', '')}"
+
+                        if (
+                            current_track_id != prev_track_id
+                            and track_info.get("artist")
+                            and track_info.get("title")
+                            and track_info["state"] == "PLAYING"
+                        ):
+                            custom_print(
+                                f"Now playing on {speaker.player_name}: "
+                                f"{track_info['artist']} - {track_info['title']}"
+                            )
+
+                        # Update previous track info
+                        self.previous_tracks[speaker_id] = track_info.copy()
 
                         # Update currently playing info
                         self.currently_playing[speaker_id] = track_info
@@ -269,7 +301,9 @@ class SonosScrobbler:
                             self.scrobble_track(track_info)
 
                     except Exception as e:
-                        logger.error(f"Error monitoring {speaker.player_name}: {e}")
+                        custom_print(
+                            f"Error monitoring {speaker.player_name}: {e}", "ERROR"
+                        )
 
                 # Update all progress displays together
                 if display_info:
@@ -277,9 +311,9 @@ class SonosScrobbler:
 
                 time.sleep(SCROBBLE_INTERVAL)
         except KeyboardInterrupt:
-            logger.info("\nShutting down...")  # Add newline before shutdown message
+            custom_print("\nShutting down...")  # Add newline before shutdown message
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            custom_print(f"Unexpected error: {e}", "ERROR")
 
     def run(self):
         """Start the scrobbler."""
