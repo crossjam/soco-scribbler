@@ -6,9 +6,7 @@ Sonos to Last.fm scrobbler using uv for dependency management.
 import logging
 import time
 import json
-from typing import Dict, Optional
 from pathlib import Path
-import os
 from datetime import datetime, timedelta
 
 from soco import discover
@@ -22,10 +20,11 @@ from config import (
     SCROBBLE_INTERVAL,
     SCROBBLE_THRESHOLD_PERCENT,
 )
+from utils import update_all_progress_displays
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,  # Changed to INFO level
+    level=logging.INFO,  # Changed to DEBUG level
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -132,14 +131,42 @@ class SonosScrobbler:
         """Get current track information from a speaker."""
         try:
             track_info = speaker.get_current_track_info()
+            logger.debug(f"Raw track info from {speaker.player_name}: {track_info}")
+
+            # Parse duration (format "0:04:32" or "4:32")
+            duration_parts = track_info.get("duration", "0:00").split(":")
+            if len(duration_parts) == 3:  # "H:MM:SS"
+                duration = (
+                    int(duration_parts[0]) * 3600
+                    + int(duration_parts[1]) * 60
+                    + int(duration_parts[2])
+                )
+            else:  # "MM:SS"
+                duration = int(duration_parts[0]) * 60 + int(duration_parts[1])
+
+            # Parse position (format "0:02:45" or "2:45")
+            position_parts = track_info.get("position", "0:00").split(":")
+            if len(position_parts) == 3:  # "H:MM:SS"
+                position = (
+                    int(position_parts[0]) * 3600
+                    + int(position_parts[1]) * 60
+                    + int(position_parts[2])
+                )
+            else:  # "MM:SS"
+                position = int(position_parts[0]) * 60 + int(position_parts[1])
+
+            logger.debug(
+                f"Parsed times for {track_info.get('title')}: "
+                f"position={track_info.get('position')}->({position}s), "
+                f"duration={track_info.get('duration')}->({duration}s)"
+            )
+
             return {
                 "artist": track_info.get("artist"),
                 "title": track_info.get("title"),
                 "album": track_info.get("album"),
-                "duration": int(track_info.get("duration", "0").split(":")[0]) * 60
-                + int(track_info.get("duration", "0").split(":")[1]),
-                "position": int(track_info.get("position", "0").split(":")[0]) * 60
-                + int(track_info.get("position", "0").split(":")[1]),
+                "duration": duration,
+                "position": position,
                 "state": speaker.get_current_transport_info().get(
                     "current_transport_state"
                 ),
@@ -170,8 +197,11 @@ class SonosScrobbler:
     def monitor_speakers(self):
         """Main loop to monitor speakers and scrobble tracks."""
         logger.info("Starting Sonos Last.fm Scrobbler")
+        display_info = {}  # Track display info for all active speakers
         try:
             while True:
+                display_info.clear()  # Reset display info each iteration
+
                 for speaker in self.speakers:
                     try:
                         speaker_id = speaker.ip_address
@@ -184,7 +214,21 @@ class SonosScrobbler:
                         self.currently_playing[speaker_id] = track_info
                         self.save_json(CURRENTLY_PLAYING_FILE, self.currently_playing)
 
-                        # Check if track should be scrobbled
+                        # Prepare display info for this speaker
+                        threshold = int(
+                            track_info["duration"] * SCROBBLE_THRESHOLD_PERCENT / 100
+                        )
+                        display_info[speaker_id] = {
+                            "speaker_name": speaker.player_name,
+                            "artist": track_info["artist"],
+                            "title": track_info["title"],
+                            "position": track_info["position"],
+                            "duration": track_info["duration"],
+                            "threshold": threshold,
+                            "state": track_info["state"],
+                        }
+
+                        # Check if track should be scrobbled (only log scrobble events)
                         if track_info["state"] == "PLAYING" and self.should_scrobble(
                             track_info, speaker_id
                         ):
@@ -193,9 +237,13 @@ class SonosScrobbler:
                     except Exception as e:
                         logger.error(f"Error monitoring {speaker.player_name}: {e}")
 
+                # Update all progress displays together
+                if display_info:
+                    update_all_progress_displays(display_info)
+
                 time.sleep(SCROBBLE_INTERVAL)
         except KeyboardInterrupt:
-            logger.info("Shutting down...")
+            logger.info("\nShutting down...")  # Add newline before shutdown message
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
 
