@@ -9,6 +9,7 @@ services:
       - sonos_lastfm_data:/app/data
     restart: always  # Ensures the container restarts automatically
     network_mode: host  # Important for Sonos discovery on the local network
+    command: ["sonos-lastfm", "run"]
 
 volumes:
   sonos_lastfm_data:

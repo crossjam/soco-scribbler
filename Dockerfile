@@ -13,11 +13,14 @@ ENV UV_SYSTEM_PYTHON=1
 
 # Copy only requirements file first to leverage caching
 COPY requirements.txt .
+COPY pyproject.toml .
+COPY README.md .
+COPY src ./src
 
 # Install dependencies with uv
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system -r requirements.txt \
-    && uv pip install --system ./src
+    && uv pip install --system .
 
 # Final stage
 FROM python:3.12-slim
@@ -27,6 +30,7 @@ WORKDIR /app
 
 # Copy installed packages from builder
 COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /usr/local/bin/sonos-lastfm /usr/local/bin/sonos-lastfm
 
 # Create data directory
 RUN mkdir -p /app/data
