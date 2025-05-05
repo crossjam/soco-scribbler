@@ -16,7 +16,8 @@ COPY requirements.txt .
 
 # Install dependencies with uv
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system -r requirements.txt
+    uv pip install --system -r requirements.txt \
+    && uv pip install --system ./src
 
 # Final stage
 FROM python:3.12-slim
@@ -37,4 +38,4 @@ COPY . .
 VOLUME ["/app/data"]
 
 # Run the application
-CMD ["python", "./sonos_lastfm.py"] 
+CMD ["sonos-lastfm"] 
