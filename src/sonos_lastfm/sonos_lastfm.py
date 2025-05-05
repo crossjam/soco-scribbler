@@ -44,7 +44,7 @@ def assert_not_none(value: str | None, name: str) -> str:
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
     force=True,  # Ensure we reset any existing handlers
 )

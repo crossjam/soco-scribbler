@@ -41,12 +41,13 @@ setup:
 install:
 	@echo "Installing dependencies..."
 	uv pip install -r requirements.txt
+	uv pip install -e .
 	@echo "Dependencies installed successfully."
 
 # Run the scrobbler
 run:
 	@echo "Running Sonos Last.fm scrobbler..."
-	uv run sonos_lastfm.py
+	uv run -m sonos_lastfm
 
 # Show available Python versions
 versions:

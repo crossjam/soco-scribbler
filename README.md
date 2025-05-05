@@ -11,7 +11,7 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
 - Smart duplicate scrobble prevention
 - Multi-speaker support
 - Local data persistence for tracking scrobble history
-- Secure credential storage using system keyring
+- Secure credential storage using system keyring (when available)
 - Modern CLI interface with interactive setup
 
 ## Installation
@@ -19,7 +19,11 @@ This script automatically scrobbles music playing on your Sonos speakers to Last
 ### Option 1: Install from PyPI (Recommended)
 
 ```bash
+# Basic installation
 pip install sonos-lastfm
+
+# Optional: Install keyring backend for secure credential storage
+pip install keyring keyrings.alt
 ```
 
 ### Option 2: Local Development Setup
@@ -39,6 +43,9 @@ pip install sonos-lastfm
 
    # For development, install additional tools (optional)
    make install-dev
+
+   # Optional: Install keyring backend for secure credential storage
+   pip install keyring keyrings.alt
    ```
 
    Run `make help` to see all available commands.
@@ -47,10 +54,12 @@ pip install sonos-lastfm
 
 ### Quick Start
 
-1. Run the interactive setup to securely store your Last.fm credentials:
+1. Run the interactive setup:
    ```bash
    sonos-lastfm --setup
    ```
+   If you have a keyring backend installed, credentials will be stored securely.
+   Otherwise, you'll be prompted to store them in your environment or .env file.
 
 2. Start scrobbling:
    ```bash
@@ -120,7 +129,7 @@ Use this command to verify your credentials are working correctly before startin
 
 ### Configuration Methods
 
-You can configure the scrobbler in three ways (in order of precedence):
+You can configure the scrobbler in several ways (in order of precedence):
 
 1. Command line arguments:
    ```bash
@@ -140,13 +149,22 @@ You can configure the scrobbler in three ways (in order of precedence):
    sonos-lastfm
    ```
 
-3. Secure keyring storage (recommended):
+3. Secure keyring storage (recommended if available):
    ```bash
-   # Store credentials securely
+   # Store credentials securely (requires keyring backend)
    sonos-lastfm --setup
    
    # Run with stored credentials
    sonos-lastfm
+   ```
+
+4. Environment file (.env):
+   Create a `.env` file in your working directory:
+   ```bash
+   LASTFM_USERNAME=your_username
+   LASTFM_PASSWORD=your_password
+   LASTFM_API_KEY=your_api_key
+   LASTFM_API_SECRET=your_api_secret
    ```
 
 ### Docker Setup (Linux Only)
@@ -189,6 +207,12 @@ The script follows configurable scrobbling rules:
 - Sonos speakers on your network
 - Last.fm account and API credentials
   - Get your API credentials at: https://www.last.fm/api/account/create
+- Optional but recommended:
+  - Keyring backend for secure credential storage:
+    ```bash
+    pip install keyring keyrings.alt
+    ```
+  - Without a keyring backend, credentials must be stored in environment variables or .env file
 
 ## Troubleshooting
 
@@ -196,3 +220,6 @@ Common issues and solutions:
 - No speakers found: Ensure your computer is on the same network as your Sonos system
 - Scrobbling not working: Check your Last.fm credentials with `sonos-lastfm --setup`
 - Missing scrobbles: Verify that both artist and title information are available for the track
+- Keyring errors: If you see keyring-related errors, either:
+  1. Install a keyring backend: `pip install keyring keyrings.alt`
+  2. Use environment variables or .env file for credentials instead

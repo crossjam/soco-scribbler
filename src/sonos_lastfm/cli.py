@@ -3,15 +3,23 @@
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
-import keyring
-import pylast
+import pylast  # type: ignore[import-untyped]
 import rich
 import typer
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
+
+# Make keyring truly optional
+try:
+    import keyring
+
+    HAS_KEYRING = True
+except Exception as e:
+    HAS_KEYRING = False
+    KEYRING_ERROR = str(e)
 
 # Create Typer app instance
 app = typer.Typer(
@@ -23,15 +31,58 @@ app = typer.Typer(
 
 # Constants
 APP_NAME = "sonos-lastfm"
-CONFIG_DIR = Path.home() / ".config" / APP_NAME
+CONFIG_DIR = Path.home() / ".sonos_lastfm"
 CREDENTIAL_KEYS = ["username", "password", "api_key", "api_secret"]
+
+# Storage options
+StorageType = Literal["keyring", "env_file"]
 
 # Ensure config directory exists
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
+# Create a simple file-based storage
+CREDENTIALS_FILE = CONFIG_DIR / ".env"
+
+
+def save_to_env_file(credentials: dict[str, str]) -> None:
+    """Save credentials to .env file in config directory.
+
+    Args:
+        credentials: Dictionary of credentials to save
+    """
+    try:
+        with CREDENTIALS_FILE.open("w") as f:
+            for key, value in credentials.items():
+                f.write(f"LASTFM_{key.upper()}={value}\n")
+        rich.print(f"[green]✓[/green] Credentials saved to {CREDENTIALS_FILE}")
+    except Exception as e:
+        rich.print(
+            f"[red]Error:[/red] Could not save credentials to {CREDENTIALS_FILE}: {e}"
+        )
+
+
+def load_from_env_file() -> dict[str, str]:
+    """Load credentials from .env file.
+
+    Returns:
+        Dictionary of credentials
+    """
+    credentials = {}
+    try:
+        if CREDENTIALS_FILE.exists():
+            with CREDENTIALS_FILE.open() as f:
+                for line in f:
+                    if "=" in line:
+                        key, value = line.strip().split("=", 1)
+                        if key.startswith("LASTFM_"):
+                            credentials[key[7:].lower()] = value
+    except Exception:
+        pass
+    return credentials
+
 
 def get_stored_credential(key: str) -> Optional[str]:
-    """Get a credential from the system keyring.
+    """Get a credential from available storage methods.
 
     Args:
         key: The key to retrieve
@@ -39,75 +90,127 @@ def get_stored_credential(key: str) -> Optional[str]:
     Returns:
         The stored credential or None if not found
     """
-    return keyring.get_password(APP_NAME, key)
+    # First try environment variable
+    env_key = f"LASTFM_{key.upper()}"
+    if value := os.getenv(env_key):
+        return value
+
+    # Then try keyring if available
+    if HAS_KEYRING:
+        try:
+            if value := keyring.get_password(APP_NAME, key):
+                return value
+        except Exception:
+            pass
+
+    # Finally try config env file
+    return load_from_env_file().get(key)
 
 
-def store_credential(key: str, value: str) -> None:
-    """Store a credential in the system keyring.
+def store_credential(
+    key: str, value: str, storage_type: Optional[StorageType] = None
+) -> None:
+    """Store a credential using the specified or available storage method.
 
     Args:
         key: The key to store
         value: The value to store
+        storage_type: Where to store the credential (if None, will use available method)
     """
-    keyring.set_password(APP_NAME, key, value)
+    # If storage type is explicitly specified, use that
+    if storage_type:
+        if storage_type == "keyring" and not HAS_KEYRING:
+            rich.print("[red]Error:[/red] Keyring storage requested but not available")
+            raise typer.Exit(1)
+
+        if storage_type == "keyring":
+            keyring.set_password(APP_NAME, key, value)
+        else:
+            save_to_env_file({key: value})
+        return
+
+    # Otherwise try available methods in order
+    if HAS_KEYRING:
+        try:
+            keyring.set_password(APP_NAME, key, value)
+            return
+        except Exception as e:
+            rich.print(f"[yellow]Warning:[/yellow] Could not store in keyring: {e}")
+
+    # Fall back to env file
+    save_to_env_file({key: value})
 
 
 def delete_credential(key: str) -> None:
-    """Delete a credential from the system keyring.
+    """Delete a credential from all storage locations.
 
     Args:
         key: The key to delete
     """
-    try:
-        keyring.delete_password(APP_NAME, key)
-    except keyring.errors.PasswordDeleteError:
-        pass  # Ignore if credential doesn't exist
+    if HAS_KEYRING:
+        try:
+            keyring.delete_password(APP_NAME, key)
+        except Exception:
+            pass
 
-
-def get_config_value(
-    key: str,
-    cli_value: Optional[str] = None,
-    env_key: Optional[str] = None,
-) -> Optional[str]:
-    """Get a configuration value from CLI args, environment, or keyring.
-
-    Args:
-        key: The key to retrieve from keyring
-        cli_value: Value provided via CLI
-        env_key: Environment variable name to check
-
-    Returns:
-        The configuration value or None if not found
-    """
-    # CLI args take precedence
-    if cli_value is not None:
-        return cli_value
-
-    # Then check environment
-    if env_key and (env_value := os.getenv(env_key)):
-        return env_value
-
-    # Finally check keyring
-    return get_stored_credential(key)
+    # Remove from env file
+    if CREDENTIALS_FILE.exists():
+        try:
+            credentials = load_from_env_file()
+            if key in credentials:
+                del credentials[key]
+                save_to_env_file(credentials)
+        except Exception:
+            pass
 
 
 def interactive_setup() -> None:
     """Run interactive setup to configure credentials."""
     rich.print("\n[bold]Welcome to Sonos Last.fm Scrobbler Setup![/bold]\n")
-    rich.print("Please enter your Last.fm credentials:")
 
+    # Explain storage options
+    rich.print("[bold]Available credential storage options:[/bold]")
+    options = []
+
+    if HAS_KEYRING:
+        options.append(("keyring", "System keyring (most secure)"))
+    options.append(("env_file", f"Config file ({CREDENTIALS_FILE})"))
+
+    for i, (key, desc) in enumerate(options, 1):
+        rich.print(f"{i}. {desc}")
+
+    # Get storage preference
+    if options:
+        choice = Prompt.ask(
+            "\nWhere would you like to store your credentials?",
+            choices=[str(i) for i in range(1, len(options) + 1)],
+            default="1",
+        )
+        storage_type = options[int(choice) - 1][0]
+    else:
+        rich.print("[red]Error:[/red] No storage methods available!")
+        raise typer.Exit(1)
+
+    rich.print("\nPlease enter your Last.fm credentials:")
     username = Prompt.ask("Username")
     password = Prompt.ask("Password", password=True)
     api_key = Prompt.ask("API Key")
     api_secret = Prompt.ask("API Secret", password=True)
 
-    # Store credentials
-    store_credential("username", username)
-    store_credential("password", password)
-    store_credential("api_key", api_key)
-    store_credential("api_secret", api_secret)
+    # Store credentials using chosen method
+    try:
+        for key, value in [
+            ("username", username),
+            ("password", password),
+            ("api_key", api_key),
+            ("api_secret", api_secret),
+        ]:
+            store_credential(key, value, storage_type)
 
-    rich.print("\n[green]✓[/green] Credentials stored securely!")
+        rich.print(f"\n[green]✓[/green] Credentials stored using {storage_type}!")
+    except Exception as e:
+        rich.print(f"\n[red]Error:[/red] Failed to store credentials: {e}")
+        raise typer.Exit(1)
 
     # Show account info after setup
     rich.print("\nTesting connection and showing account information:")
@@ -326,10 +429,10 @@ def run(
         return
 
     # Get credentials from various sources
-    final_username = get_config_value("username", username, "LASTFM_USERNAME")
-    final_password = get_config_value("password", password, "LASTFM_PASSWORD")
-    final_api_key = get_config_value("api_key", api_key, "LASTFM_API_KEY")
-    final_api_secret = get_config_value("api_secret", api_secret, "LASTFM_API_SECRET")
+    final_username = get_stored_credential("username")
+    final_password = get_stored_credential("password")
+    final_api_key = get_stored_credential("api_key")
+    final_api_secret = get_stored_credential("api_secret")
 
     # Check if we have all required credentials
     missing = []
