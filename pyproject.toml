@@ -3,16 +3,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sonos-lastfm"
+name = "soco-scribbler"
 version = "0.1.5"
-description = "Automatically scrobble music playing on your Sonos speakers to Last.fm"
+description = "Automatically scribble what's playing on your Sonos speakers. Pus to services like Last.fm, and others."
 readme = "README.md"
 authors = [
-    { name = "Denis Moskalets", email = "denya.msk@gmail.com" }
+    { name = "Denis Moskalets", email = "denya.msk@gmail.com" },
+    { name = "Brian M. Dennis", email = "bmd@pirateninja.dev" }
 ]
 license = { text = "MIT" }
 requires-python = ">=3.11"
-keywords = ["sonos", "lastfm", "scrobbler", "music"]
+keywords = ["sonos", "lastfm", "scrobbler", "music", "sqlite"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
@@ -29,11 +30,12 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.7.0",
     "keyring>=24.3.0",
+    "sqlite-utils>=3.38",
 ]
 
 [project.urls]
-Homepage = "https://github.com/denya/sonos-lastfm"
-Issues = "https://github.com/denya/sonos-lastfm/issues"
+Homepage = "https://github.com/crossjam/soco-scribbler"
+Issues = "https://github.com/crossjam/soco-scribbler/issues"
 
 [project.scripts]
 sonos-lastfm = "sonos_lastfm:main"
