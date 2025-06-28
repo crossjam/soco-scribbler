@@ -1,8 +1,11 @@
-# Sonos to Last.fm Scrobbler
+# Sonos Play Scribbler
 
-![sonos lastfm](https://github.com/user-attachments/assets/6c84174d-a927-4801-8800-e2343d1646d7)
+_Forked from [sonos-lastfm](https://github.com/denya/sonos-lastfm)_
 
-This script automatically scrobbles music playing on your Sonos speakers to Last.fm.
+This script automatically logs music playing on your Sonos
+speakers. Scrobbling to Last.Fm support comes from the upstream
+repo. Hacking away on other destinations, like a text log file, sqlite
+db, and Apache Kafka.
 
 ## Features
 
@@ -24,6 +27,14 @@ pip install sonos-lastfm
 
 # Optional: Install keyring backend for secure credential storage
 pip install keyring keyrings.alt
+```
+
+uv version
+
+```bash
+uv init --name my-project
+uv add "soco-scribbler @ git+https://crossjam/soco-scribbler"
+uv add keyring keyrings.alt
 ```
 
 ### Option 2: Local Development Setup

@@ -199,13 +199,25 @@ def interactive_setup() -> None:
 
     # Store credentials using chosen method
     try:
-        for key, value in [
-            ("username", username),
-            ("password", password),
-            ("api_key", api_key),
-            ("api_secret", api_secret),
-        ]:
-            store_credential(key, value, storage_type)
+        rich.print(f"Selected storge type: {storage_type}")
+        if storage_type == "env_file":
+            save_to_env_file(
+                {
+                    "username": username,
+                    "password": password,
+                    "api_key": api_key,
+                    "api_secret": api_secret,
+                }
+            )
+        else:
+            for key, value in [
+                ("username", username),
+                ("password", password),
+                ("api_key", api_key),
+                ("api_secret", api_secret),
+            ]:
+
+                store_credential(key, value, storage_type)
 
         rich.print(f"\n[green]✓[/green] Credentials stored using {storage_type}!")
     except Exception as e:
