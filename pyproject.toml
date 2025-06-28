@@ -39,6 +39,7 @@ Issues = "https://github.com/crossjam/soco-scribbler/issues"
 
 [project.scripts]
 sonos-lastfm = "sonos_lastfm:main"
+soco-scribbler = "sonos_lastfm.soco_scribbler:main"
 
 [tool.hatch.build]
 include = [
