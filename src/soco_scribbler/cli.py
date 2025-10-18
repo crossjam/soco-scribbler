@@ -8,6 +8,8 @@ from typing import Optional, Literal
 import pylast  # type: ignore[import-untyped]
 import rich
 import typer
+
+from dotenv import dotenv_values, load_dotenv
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
@@ -42,6 +44,7 @@ CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Create a simple file-based storage
 CREDENTIALS_FILE = CONFIG_DIR / ".env"
+OP_CREDENTIALS_FILE = CONFIG_DIR / ".op_env"
 
 
 def save_to_env_file(credentials: dict[str, str]) -> None:
@@ -70,12 +73,38 @@ def load_from_env_file() -> dict[str, str]:
     credentials = {}
     try:
         if CREDENTIALS_FILE.exists():
-            with CREDENTIALS_FILE.open() as f:
-                for line in f:
-                    if "=" in line:
-                        key, value = line.strip().split("=", 1)
-                        if key.startswith("LASTFM_"):
-                            credentials[key[7:].lower()] = value
+            config = dotenv_values(CREDENTIALS_FILE)
+            for key, value in config.items():
+                if key.startswith("LASTFM_"):
+                    credentials[key[7:].lower()] = value
+    except Exception:
+        pass
+    return credentials
+
+
+def load_from_op_env_file() -> dict[str, str]:
+    # check to see if the op command is in the PATH
+    credentials = {}
+    try:
+        if OP_CREDENTIALS_FILE.exists():
+            with tmpdir.mkdir() as tmp_dir:
+                op_env_injected = tmp_dir / "dotenv"
+                subprocess.run(["op", "signin"])
+                subprocess.run(
+                    [
+                        "op",
+                        "--cache",
+                        "inject",
+                        "--in-file",
+                        str(OP_CREDENTIALS_FILE),
+                        "--out-file",
+                        str(op_env_injected),
+                    ]
+                )
+                config = dotenv_values(op_env_injected)
+                for key, value in config.items():
+                    if key.startswith("LASTFM_"):
+                        credentials[key[7:].lower()] = value
     except Exception:
         pass
     return credentials
