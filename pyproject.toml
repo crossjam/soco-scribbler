@@ -38,18 +38,18 @@ Homepage = "https://github.com/crossjam/soco-scribbler"
 Issues = "https://github.com/crossjam/soco-scribbler/issues"
 
 [project.scripts]
-sonos-lastfm = "sonos_lastfm:main"
-soco-scribbler = "sonos_lastfm.soco_scribbler:main"
+sonos-lastfm = "soco_scribbler:main"
+soco-scribbler = "soco_scribbler.soco_scribbler:main"
 
 [tool.hatch.build]
 include = [
-    "src/sonos_lastfm/*.py",
+    "src/soco_scribbler/*.py",
     "LICENSE",
     "README.md"
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/sonos_lastfm"]
+packages = ["src/soco_scribbler"]
 
 [tool.mypy]
 python_version = "0.1.5"
