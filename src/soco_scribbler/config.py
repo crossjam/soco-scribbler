@@ -3,9 +3,22 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
+from platformdirs import PlatformDirs
 
-# Load environment variables from .env file
+APP_NAME = "dev.pirateninja.soco-scribbler"
+APP_AUTHOR = "SocoScribbler"
+APP_DIRS = PlatformDirs(APP_NAME, APP_AUTHOR)
+
+CONFIG_DIR = Path(APP_DIRS.user_config_dir)
+DATA_DIR = Path(APP_DIRS.user_data_dir)
+LOG_DIR = Path(APP_DIRS.user_log_dir)
+CREDENTIALS_FILE = CONFIG_DIR / ".env"
+OP_CREDENTIALS_FILE = CONFIG_DIR / ".op_env"
+DEFAULT_LOG_FILE = LOG_DIR / "scribbles.jsonl"
+
+# Load environment variables from default .env and user config directory
 load_dotenv()
+load_dotenv(CREDENTIALS_FILE)
 
 
 def validate_config() -> Optional[List[str]]:
@@ -53,7 +66,7 @@ def get_config():
             max(float(os.getenv("SCROBBLE_THRESHOLD_PERCENT") or "25"), 0), 100
         ),
         # Data storage paths
-        "DATA_DIR": Path("./data"),
+        "DATA_DIR": DATA_DIR,
     }
 
 
@@ -75,6 +88,25 @@ if not 0 <= SCROBBLE_THRESHOLD_PERCENT <= 100:
     SCROBBLE_THRESHOLD_PERCENT = 25
 
 # Data storage paths
-DATA_DIR = Path("./data")
 LAST_SCROBBLED_FILE = DATA_DIR / "last_scrobbled.json"
 CURRENTLY_PLAYING_FILE = DATA_DIR / "currently_playing.json"
+
+
+def ensure_user_dirs() -> dict[str, bool]:
+    """Ensure user config/data/log directories exist.
+
+    Returns:
+        Mapping of directory type to whether it was created this call.
+    """
+    created: dict[str, bool] = {}
+    for label, path in {
+        "config": CONFIG_DIR,
+        "data": DATA_DIR,
+        "log": LOG_DIR,
+    }.items():
+        if path.exists():
+            created[label] = False
+        else:
+            path.mkdir(parents=True, exist_ok=True)
+            created[label] = True
+    return created

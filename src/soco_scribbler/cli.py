@@ -14,6 +14,13 @@ from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
 
+from .config import (
+    CONFIG_DIR,
+    CREDENTIALS_FILE,
+    OP_CREDENTIALS_FILE,
+    ensure_user_dirs,
+)
+
 # Make keyring truly optional
 try:
     import keyring
@@ -33,18 +40,10 @@ app = typer.Typer(
 
 # Constants
 APP_NAME = "sonos-lastfm"
-CONFIG_DIR = Path.home() / ".sonos_lastfm"
 CREDENTIAL_KEYS = ["username", "password", "api_key", "api_secret"]
 
 # Storage options
 StorageType = Literal["keyring", "env_file"]
-
-# Ensure config directory exists
-CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-
-# Create a simple file-based storage
-CREDENTIALS_FILE = CONFIG_DIR / ".env"
-OP_CREDENTIALS_FILE = CONFIG_DIR / ".op_env"
 
 
 def save_to_env_file(credentials: dict[str, str]) -> None:
@@ -54,6 +53,7 @@ def save_to_env_file(credentials: dict[str, str]) -> None:
         credentials: Dictionary of credentials to save
     """
     try:
+        ensure_user_dirs()
         with CREDENTIALS_FILE.open("w") as f:
             for key, value in credentials.items():
                 f.write(f"LASTFM_{key.upper()}={value}\n")
@@ -86,6 +86,7 @@ def load_from_op_env_file() -> dict[str, str]:
     # check to see if the op command is in the PATH
     credentials = {}
     try:
+        ensure_user_dirs()
         if OP_CREDENTIALS_FILE.exists():
             with tmpdir.mkdir() as tmp_dir:
                 op_env_injected = tmp_dir / "dotenv"
