@@ -138,6 +138,26 @@ This will:
 
 Use this command to verify your credentials are working correctly before starting the scrobbler.
 
+### Local Logging with `soco-scribbler`
+
+Prefer to keep a personal record without touching Last.fm? Run the logger mode:
+
+```bash
+soco-scribbler scribble --log-format text --stdout
+```
+
+The command monitors your Sonos players and writes each scrobble event to a log file. By default entries are appended to `soco-scribbler.log.jsonl` in the platform-specific log directory (macOS: `~/Library/Logs/soco-scribbler`, Linux: `~/.local/state/soco-scribbler`, Windows: `%LOCALAPPDATA%\soco-scribbler\Logs`). Override the location with `--log-file` and switch between `jsonl` and `text` output with `--log-format`. Use `--no-stdout` if you only want file output.
+
+### Initialize User Directories
+
+Run the helper once to create (or verify) the platform-specific directories used for credentials, cached data, and logs:
+
+```bash
+soco-scribbler init
+```
+
+This prints the resolved locations so you know where each file is stored.
+
 ### Configuration Methods
 
 You can configure the scrobbler in several ways (in order of precedence):
@@ -170,13 +190,17 @@ You can configure the scrobbler in several ways (in order of precedence):
    ```
 
 4. Environment file (.env):
-   Create a `.env` file in your working directory:
+   Create a `.env` file in the Soco Scribbler configuration directory \
+   (macOS: `~/Library/Application Support/soco-scribbler`, \
+   Linux: `~/.config/soco-scribbler`, \
+   Windows: `%APPDATA%\soco-scribbler`):
    ```bash
    LASTFM_USERNAME=your_username
    LASTFM_PASSWORD=your_password
    LASTFM_API_KEY=your_api_key
    LASTFM_API_SECRET=your_api_secret
    ```
+   The CLI loads this file automatically on startup.
 
 ### Docker Setup (Linux Only)
 
@@ -208,9 +232,15 @@ The script follows configurable scrobbling rules:
 ## Data Storage
 
 - Credentials are stored securely in your system's keyring
-- Scrobble history and currently playing information is stored in:
-  - `~/.config/sonos-lastfm/last_scrobbled.json`
-  - `~/.config/sonos-lastfm/currently_playing.json`
+- Scrobble history and currently playing information is stored in the
+  application data directory (macOS: `~/Library/Application Support/soco-scribbler`,
+  Linux: `~/.local/share/soco-scribbler`,
+  Windows: `%APPDATA%\soco-scribbler`) as:
+  - `last_scrobbled.json`
+  - `currently_playing.json`
+- Logger output defaults to the platform log directory (macOS: `~/Library/Logs/soco-scribbler`,
+  Linux: `~/.local/state/soco-scribbler`,
+  Windows: `%LOCALAPPDATA%\soco-scribbler\Logs`) in `soco-scribbler.log.jsonl`
 
 ## Requirements
 
