@@ -32,14 +32,14 @@ except Exception as e:
 
 # Create Typer app instance
 app = typer.Typer(
-    name="sonos-lastfm",
+    name="soco-scribbler",
     help="Scrobble your Sonos plays to Last.fm",
     add_completion=False,
     no_args_is_help=True,  # Show help when no command is provided
 )
 
 # Constants
-APP_NAME = "sonos-lastfm"
+APP_NAME = "soco-scribbler"
 CREDENTIAL_KEYS = ["username", "password", "api_key", "api_secret"]
 
 # Storage options
@@ -526,7 +526,7 @@ def get_lastfm_network() -> Optional[pylast.LastFMNetwork]:
 
     if not all([username, password, api_key, api_secret]):
         rich.print(
-            "[red]Error:[/red] Missing credentials. Please run 'sonos-lastfm setup' to configure."
+            "[red]Error:[/red] Missing credentials. Please run 'soco-scribbler setup' to configure."
         )
         return None
 
