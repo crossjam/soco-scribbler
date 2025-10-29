@@ -61,6 +61,19 @@ uv add keyring keyrings.alt
 
    Run `make help` to see all available commands.
 
+### Building the package
+
+The project uses [`uv`](https://github.com/astral-sh/uv) to drive packaging
+workflows. You can build both the source and wheel distributions locally with:
+
+```bash
+make build-package
+```
+
+Behind the scenes this ensures the `build` frontend is available and then runs
+`python -m build` through `uv`. The resulting artifacts are placed in the
+`dist/` directory.
+
 ## Usage
 
 ### Quick Start
