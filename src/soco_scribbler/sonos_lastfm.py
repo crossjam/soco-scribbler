@@ -264,11 +264,17 @@ class SonosScrobbler:
                 speaker.player_name,
                 track_info,
             )
-
             # Parse duration (format "0:04:32" or "4:32")
             duration_parts: list[str] = track_info.get("duration", "0:00").split(
                 ":",
             )
+            if duration_parts[0] == "NOT_IMPLEMENTED":
+                duration_parts = [0, 0]
+            
+            logger.debug(
+                "duration parts: %s: %s", track_info.get("duration", None), duration_parts
+            )
+            
             if len(duration_parts) == TIME_FORMAT_HMS:  # "H:MM:SS"
                 duration: int = (
                     int(duration_parts[0]) * 3600
@@ -281,6 +287,13 @@ class SonosScrobbler:
             # Parse position (format "0:02:45" or "2:45")
             position_parts: list[str] = track_info.get("position", "0:00").split(
                 ":",
+            )
+
+            if position_parts[0] == "NOT_IMPLEMENTED":
+                position_parts = [0, 0]
+            
+            logger.debug(
+                "position part: %s: %s", track_info.get("position", None), position_parts
             )
             if len(position_parts) == TIME_FORMAT_HMS:  # "H:MM:SS"
                 position: int = (
@@ -420,6 +433,8 @@ class SonosScrobbler:
                             track_info,
                             speaker_id,
                         ):
+                            track_info["speaker"] = speaker.player_name
+                            track_info["speaker_id"] = speaker_id
                             self.scrobble_track(track_info)
 
                     except Exception:

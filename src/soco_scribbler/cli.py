@@ -8,9 +8,18 @@ from typing import Optional, Literal
 import pylast  # type: ignore[import-untyped]
 import rich
 import typer
+
+from dotenv import dotenv_values, load_dotenv
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
+
+from .config import (
+    CONFIG_DIR,
+    CREDENTIALS_FILE,
+    OP_CREDENTIALS_FILE,
+    ensure_user_dirs,
+)
 
 # Make keyring truly optional
 try:
@@ -23,25 +32,18 @@ except Exception as e:
 
 # Create Typer app instance
 app = typer.Typer(
-    name="sonos-lastfm",
+    name="soco-scribbler",
     help="Scrobble your Sonos plays to Last.fm",
     add_completion=False,
     no_args_is_help=True,  # Show help when no command is provided
 )
 
 # Constants
-APP_NAME = "sonos-lastfm"
-CONFIG_DIR = Path.home() / ".sonos_lastfm"
+APP_NAME = "soco-scribbler"
 CREDENTIAL_KEYS = ["username", "password", "api_key", "api_secret"]
 
 # Storage options
 StorageType = Literal["keyring", "env_file"]
-
-# Ensure config directory exists
-CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-
-# Create a simple file-based storage
-CREDENTIALS_FILE = CONFIG_DIR / ".env"
 
 
 def save_to_env_file(credentials: dict[str, str]) -> None:
@@ -51,6 +53,7 @@ def save_to_env_file(credentials: dict[str, str]) -> None:
         credentials: Dictionary of credentials to save
     """
     try:
+        ensure_user_dirs()
         with CREDENTIALS_FILE.open("w") as f:
             for key, value in credentials.items():
                 f.write(f"LASTFM_{key.upper()}={value}\n")
@@ -70,12 +73,39 @@ def load_from_env_file() -> dict[str, str]:
     credentials = {}
     try:
         if CREDENTIALS_FILE.exists():
-            with CREDENTIALS_FILE.open() as f:
-                for line in f:
-                    if "=" in line:
-                        key, value = line.strip().split("=", 1)
-                        if key.startswith("LASTFM_"):
-                            credentials[key[7:].lower()] = value
+            config = dotenv_values(CREDENTIALS_FILE)
+            for key, value in config.items():
+                if key.startswith("LASTFM_"):
+                    credentials[key[7:].lower()] = value
+    except Exception:
+        pass
+    return credentials
+
+
+def load_from_op_env_file() -> dict[str, str]:
+    # check to see if the op command is in the PATH
+    credentials = {}
+    try:
+        ensure_user_dirs()
+        if OP_CREDENTIALS_FILE.exists():
+            with tmpdir.mkdir() as tmp_dir:
+                op_env_injected = tmp_dir / "dotenv"
+                subprocess.run(["op", "signin"])
+                subprocess.run(
+                    [
+                        "op",
+                        "--cache",
+                        "inject",
+                        "--in-file",
+                        str(OP_CREDENTIALS_FILE),
+                        "--out-file",
+                        str(op_env_injected),
+                    ]
+                )
+                config = dotenv_values(op_env_injected)
+                for key, value in config.items():
+                    if key.startswith("LASTFM_"):
+                        credentials[key[7:].lower()] = value
     except Exception:
         pass
     return credentials
@@ -496,7 +526,7 @@ def get_lastfm_network() -> Optional[pylast.LastFMNetwork]:
 
     if not all([username, password, api_key, api_secret]):
         rich.print(
-            "[red]Error:[/red] Missing credentials. Please run 'sonos-lastfm setup' to configure."
+            "[red]Error:[/red] Missing credentials. Please run 'soco-scribbler setup' to configure."
         )
         return None
 

@@ -1,17 +1,17 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "soco-scribbler"
 version = "0.1.5"
 description = "Automatically scribble what's playing on your Sonos speakers. Pus to services like Last.fm, and others."
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
     { name = "Denis Moskalets", email = "denya.msk@gmail.com" },
     { name = "Brian M. Dennis", email = "bmd@pirateninja.dev" }
 ]
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 keywords = ["sonos", "lastfm", "scrobbler", "music", "sqlite"]
 classifiers = [
@@ -27,6 +27,7 @@ dependencies = [
     "soco>=0.27.0",
     "pylast>=5.1.0",
     "python-dotenv>=1.0.0",
+    "platformdirs>=4.2.0",
     "typer>=0.9.0",
     "rich>=13.7.0",
     "keyring>=24.3.0",
@@ -38,20 +39,19 @@ Homepage = "https://github.com/crossjam/soco-scribbler"
 Issues = "https://github.com/crossjam/soco-scribbler/issues"
 
 [project.scripts]
-sonos-lastfm = "sonos_lastfm:main"
+sonos-lastfm = "soco_scribbler:main"
+soco-scribbler = "soco_scribbler.soco_scribbler:main"
 
-[tool.hatch.build]
-include = [
-    "src/sonos_lastfm/*.py",
-    "LICENSE",
-    "README.md"
-]
+[tool.setuptools]
+package-dir = { "" = "src" }
+license-files = ["LICENSE"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/sonos_lastfm"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["soco_scribbler"]
 
 [tool.mypy]
-python_version = "0.1.5"
+python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
