@@ -14,7 +14,7 @@ PYTHON_FILES := sonos_lastfm.py utils.py
 
 # Install development dependencies
 install-dev:
-	uv pip install mypy ruff types-setuptools hatchling
+	uv pip install build mypy ruff setuptools wheel types-setuptools
 
 # Check types with mypy
 check-types:
@@ -72,8 +72,8 @@ update-version:
 # Build Python package
 build-package:
 	@echo "Building package..."
-	uv pip install hatchling
-	uv build --no-sources
+	uv pip install build
+	uv run --with build python -m build --wheel --sdist
 
 # Publish package to PyPI
 publish-package:
