@@ -105,7 +105,7 @@ help = "Set up Python environment with uv"
 shell = """
 echo "Setting up Python environment..."
 uv venv
-echo "Python environment setup complete. Run 'poe install' or 'make install' to install dependencies."
+echo "Python environment setup complete. Run 'make install' to install dependencies."
 """
 
 # Code Quality Tasks

@@ -26,17 +26,17 @@ This conversion successfully migrated all Makefile tasks to PoeThePoet (poe), a 
 
 ## Task Mapping
 
-The conversion includes all original Makefile tasks plus additional QA tasks:
+The conversion includes selected Makefile tasks plus additional QA tasks:
 
 | Category | Tasks |
 |----------|-------|
-| Environment Setup | setup, install, install-dev |
+| Environment Setup | setup |
 | Code Quality | check-types, check-ruff, check-all |
 | QA Tasks (Added) | lint, lint-fix, typecheck, format, format-check, test, qa |
-| Utility | clean, run, versions, version |
+| Utility | clean |
 | Release Management | update-version, build-package, publish-package, verify-package, release |
 
-Note: The `help` task is not needed as poe provides built-in help via `poe --help`.
+**Note:** Install tasks (install, install-dev) from the Makefile are handled via `make install` and `make install-dev` directly, as they're specific to uv tooling. The `help` task is not needed as poe provides built-in help via `poe --help`.
 
 ## How to Use
 
@@ -74,8 +74,8 @@ poe -d clean
 ```bash
 # Development workflow
 poe setup              # Create virtual environment
-poe install            # Install dependencies
-poe install-dev        # Install dev dependencies
+make install           # Install dependencies (via Makefile)
+make install-dev       # Install dev dependencies (via Makefile)
 
 # QA and Code Quality (comprehensive)
 poe qa                 # Run all QA checks (format, lint, typecheck)
@@ -91,8 +91,6 @@ poe test               # Run tests (fails until tests are configured)
 
 # Utility
 poe clean              # Clean build artifacts
-poe run                # Run the scrobbler
-poe version            # Show Python version
 
 # Release process
 poe build-package      # Build distributions
