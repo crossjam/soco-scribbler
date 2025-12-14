@@ -124,11 +124,11 @@ cmd = "uv pip install build mypy ruff setuptools wheel types-setuptools poethepo
 # Code Quality Tasks
 [tool.poe.tasks.check-types]
 help = "Run mypy type checker"
-cmd = "mypy --strict --python-version=3.12 sonos_lastfm.py utils.py"
+cmd = "mypy --strict --python-version=3.12 src/soco_scribbler/"
 
 [tool.poe.tasks.check-ruff]
 help = "Run ruff linter"
-cmd = "ruff check --select=ALL --target-version=py312 sonos_lastfm.py utils.py"
+cmd = "ruff check --select=ALL --target-version=py312 src/soco_scribbler/"
 
 [tool.poe.tasks.check-all]
 help = "Run all checks (types and linting)"
@@ -143,7 +143,7 @@ shell = "rm -rf .mypy_cache .ruff_cache __pycache__ */__pycache__ .venv dist bui
 help = "Run the Sonos Last.fm scrobbler"
 shell = """
 echo "Running Sonos Last.fm scrobbler..."
-uv run -m sonos_lastfm
+uv run -m soco_scribbler
 """
 
 [tool.poe.tasks.versions]
@@ -171,10 +171,10 @@ fi
 echo "Updating version to $NEW_VERSION"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
-    sed -i '' "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/sonos_lastfm/__init__.py
+    sed -i '' "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/soco_scribbler/__init__.py
 else
     sed -i "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
-    sed -i "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/sonos_lastfm/__init__.py
+    sed -i "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/soco_scribbler/__init__.py
 fi
 """
 
