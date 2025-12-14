@@ -73,9 +73,8 @@ pip install -e ".[dev]"
 
 # Run poe tasks
 poe setup          # Set up Python environment
-poe install        # Install dependencies
+make install       # Install dependencies (via Makefile)
 poe clean          # Clean up build artifacts
-poe run            # Run the scrobbler
 
 # QA and Code Quality tasks
 poe qa             # Run all QA checks (format, lint, typecheck)
