@@ -78,13 +78,13 @@ poe clean          # Clean up build artifacts
 poe run            # Run the scrobbler
 
 # QA and Code Quality tasks
-poe qa             # Run all QA checks (format, lint, typecheck, test)
+poe qa             # Run all QA checks (format, lint, typecheck)
 poe lint           # Run linter (ruff)
 poe lint-fix       # Run linter with auto-fix
 poe typecheck      # Run type checker (mypy)
 poe format         # Format code with ruff
 poe format-check   # Check if code is formatted correctly
-poe test           # Run tests (when configured)
+poe test           # Run tests (fails until tests are configured)
 poe check-all      # Run type checking and linting
 
 # View all available tasks

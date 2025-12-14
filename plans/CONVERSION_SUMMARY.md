@@ -78,7 +78,7 @@ poe install            # Install dependencies
 poe install-dev        # Install dev dependencies
 
 # QA and Code Quality (comprehensive)
-poe qa                 # Run all QA checks (format, lint, typecheck, test)
+poe qa                 # Run all QA checks (format, lint, typecheck)
 poe check-all          # Run type checking and linting
 
 # Individual QA tasks
@@ -87,7 +87,7 @@ poe lint-fix           # Run linter with auto-fix
 poe typecheck          # Run type checker (mypy)
 poe format             # Format code with ruff
 poe format-check       # Check if code is formatted correctly
-poe test               # Run tests (when configured)
+poe test               # Run tests (fails until tests are configured)
 
 # Utility
 poe clean              # Clean build artifacts

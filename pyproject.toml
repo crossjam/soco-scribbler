@@ -145,15 +145,16 @@ cmd = "ruff format --check src/soco_scribbler/"
 [tool.poe.tasks.test]
 help = "Run tests (placeholder - no tests configured yet)"
 shell = """
-echo "No tests configured yet. To add tests:"
+echo "Error: No tests configured yet. To add tests:"
 echo "1. Add pytest to dev dependencies"
 echo "2. Create tests/ directory with test files"
 echo "3. Update this task to run: pytest tests/"
+exit 1
 """
 
 [tool.poe.tasks.qa]
-help = "Run all QA checks (format, lint, typecheck, test)"
-sequence = ["format-check", "lint", "typecheck", "test"]
+help = "Run all QA checks (format, lint, typecheck)"
+sequence = ["format-check", "lint", "typecheck"]
 
 # Utility Tasks
 [tool.poe.tasks.clean]
