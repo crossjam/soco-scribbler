@@ -105,7 +105,7 @@ help = "Set up Python environment with uv"
 shell = """
 echo "Setting up Python environment..."
 uv venv
-echo "Python environment setup complete. Run 'poe install' to install dependencies."
+echo "Python environment setup complete. Run 'poe install' or 'make install' to install dependencies."
 """
 
 [tool.poe.tasks.install]
@@ -197,6 +197,7 @@ uv publish --token $PYPI_TOKEN
 help = "Verify package installation"
 shell = """
 echo "Verifying package installation..."
+# Package name uses hyphen (soco-scribbler), Python module uses underscore (soco_scribbler)
 uv run --with soco-scribbler --no-project -- python -c "import soco_scribbler"
 """
 
