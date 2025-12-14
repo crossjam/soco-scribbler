@@ -74,15 +74,24 @@ pip install -e ".[dev]"
 # Run poe tasks
 poe setup          # Set up Python environment
 poe install        # Install dependencies
-poe check-all      # Run all code quality checks
 poe clean          # Clean up build artifacts
 poe run            # Run the scrobbler
+
+# QA and Code Quality tasks
+poe qa             # Run all QA checks (format, lint, typecheck, test)
+poe lint           # Run linter (ruff)
+poe lint-fix       # Run linter with auto-fix
+poe typecheck      # Run type checker (mypy)
+poe format         # Format code with ruff
+poe format-check   # Check if code is formatted correctly
+poe test           # Run tests (when configured)
+poe check-all      # Run type checking and linting
 
 # View all available tasks
 poe --help
 
 # Run a task with verbose output
-poe -v check-types
+poe -v typecheck
 ```
 
 All Makefile commands have equivalent PoeThePoet tasks. Tasks are configured in `pyproject.toml` under `[tool.poe.tasks]`.

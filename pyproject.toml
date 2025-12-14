@@ -121,6 +121,40 @@ cmd = "ruff check --select=ALL --target-version=py312 src/soco_scribbler/"
 help = "Run all checks (types and linting)"
 sequence = ["check-types", "check-ruff"]
 
+# QA Tasks (aliases and additional checks)
+[tool.poe.tasks.lint]
+help = "Run linter (alias for check-ruff)"
+cmd = "ruff check --select=ALL --target-version=py312 src/soco_scribbler/"
+
+[tool.poe.tasks.lint-fix]
+help = "Run linter with auto-fix"
+cmd = "ruff check --select=ALL --target-version=py312 --fix src/soco_scribbler/"
+
+[tool.poe.tasks.typecheck]
+help = "Run type checker (alias for check-types)"
+cmd = "mypy --strict --python-version=3.12 src/soco_scribbler/"
+
+[tool.poe.tasks.format]
+help = "Format code with ruff"
+cmd = "ruff format src/soco_scribbler/"
+
+[tool.poe.tasks.format-check]
+help = "Check code formatting without making changes"
+cmd = "ruff format --check src/soco_scribbler/"
+
+[tool.poe.tasks.test]
+help = "Run tests (placeholder - no tests configured yet)"
+shell = """
+echo "No tests configured yet. To add tests:"
+echo "1. Add pytest to dev dependencies"
+echo "2. Create tests/ directory with test files"
+echo "3. Update this task to run: pytest tests/"
+"""
+
+[tool.poe.tasks.qa]
+help = "Run all QA checks (format, lint, typecheck, test)"
+sequence = ["format-check", "lint", "typecheck", "test"]
+
 # Utility Tasks
 [tool.poe.tasks.clean]
 help = "Clean up cache directories and build artifacts"

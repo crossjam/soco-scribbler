@@ -26,12 +26,13 @@ This conversion successfully migrated all Makefile tasks to PoeThePoet (poe), a 
 
 ## Task Mapping
 
-All 15 Makefile tasks have been successfully converted:
+All Makefile tasks have been successfully converted, plus additional QA tasks added:
 
 | Category | Tasks |
 |----------|-------|
 | Environment Setup | setup, install, install-dev |
 | Code Quality | check-types, check-ruff, check-all |
+| QA Tasks | lint, lint-fix, typecheck, format, format-check, test, qa |
 | Utility | clean, run, versions, version |
 | Release Management | update-version, build-package, publish-package, verify-package, release |
 
@@ -75,11 +76,18 @@ poe -d clean
 poe setup              # Create virtual environment
 poe install            # Install dependencies
 poe install-dev        # Install dev dependencies
-poe check-all          # Run all checks
 
-# Code quality
-poe check-types        # Run mypy
-poe check-ruff         # Run ruff linter
+# QA and Code Quality (comprehensive)
+poe qa                 # Run all QA checks (format, lint, typecheck, test)
+poe check-all          # Run type checking and linting
+
+# Individual QA tasks
+poe lint               # Run linter (ruff)
+poe lint-fix           # Run linter with auto-fix
+poe typecheck          # Run type checker (mypy)
+poe format             # Format code with ruff
+poe format-check       # Check if code is formatted correctly
+poe test               # Run tests (when configured)
 
 # Utility
 poe clean              # Clean build artifacts
