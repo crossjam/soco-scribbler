@@ -34,6 +34,15 @@ dependencies = [
     "sqlite-utils>=3.38",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "poethepoet>=0.24.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "build>=1.0.0",
+    "types-setuptools>=68.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/crossjam/soco-scribbler"
 Issues = "https://github.com/crossjam/soco-scribbler/issues"
@@ -82,4 +91,130 @@ max-complexity = 10
 convention = "google"
 
 [tool.ruff.lint.pylint]
-max-args = 6 
+max-args = 6
+
+# PoeThePoet task configuration
+[tool.poe]
+envfile = ".env"
+
+[tool.poe.tasks]
+
+# Environment Setup Tasks
+[tool.poe.tasks.setup]
+help = "Set up Python environment with uv"
+shell = """
+echo "Setting up Python environment..."
+uv venv
+echo "Python environment setup complete. Run 'poe install' to install dependencies."
+"""
+
+[tool.poe.tasks.install]
+help = "Install project dependencies"
+shell = """
+echo "Installing dependencies..."
+uv pip install -r requirements.txt
+uv pip install -e .
+echo "Dependencies installed successfully."
+"""
+
+[tool.poe.tasks.install-dev]
+help = "Install development dependencies"
+cmd = "uv pip install build mypy ruff setuptools wheel types-setuptools poethepoet"
+
+# Code Quality Tasks
+[tool.poe.tasks.check-types]
+help = "Run mypy type checker"
+cmd = "mypy --strict --python-version=3.12 sonos_lastfm.py utils.py"
+
+[tool.poe.tasks.check-ruff]
+help = "Run ruff linter"
+cmd = "ruff check --select=ALL --target-version=py312 sonos_lastfm.py utils.py"
+
+[tool.poe.tasks.check-all]
+help = "Run all checks (types and linting)"
+sequence = ["check-types", "check-ruff"]
+
+# Utility Tasks
+[tool.poe.tasks.clean]
+help = "Clean up cache directories and build artifacts"
+shell = "rm -rf .mypy_cache .ruff_cache __pycache__ */__pycache__ .venv dist build *.egg-info"
+
+[tool.poe.tasks.run]
+help = "Run the Sonos Last.fm scrobbler"
+shell = """
+echo "Running Sonos Last.fm scrobbler..."
+uv run -m sonos_lastfm
+"""
+
+[tool.poe.tasks.versions]
+help = "Show available Python versions"
+shell = """
+echo "Available Python versions:"
+uv python list
+"""
+
+[tool.poe.tasks.version]
+help = "Show current Python version"
+shell = """
+echo "Current Python version:"
+uv python --version
+"""
+
+# Release Management Tasks
+[tool.poe.tasks.update-version]
+help = "Update version in pyproject.toml and __init__.py (requires NEW_VERSION env var)"
+shell = """
+if [ -z "$NEW_VERSION" ]; then
+    echo "Error: NEW_VERSION is not set"
+    exit 1
+fi
+echo "Updating version to $NEW_VERSION"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
+    sed -i '' "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/sonos_lastfm/__init__.py
+else
+    sed -i "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
+    sed -i "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/sonos_lastfm/__init__.py
+fi
+"""
+
+[tool.poe.tasks.build-package]
+help = "Build Python package (wheel and sdist)"
+shell = """
+echo "Building package..."
+uv pip install build
+uv run --with build python -m build --wheel --sdist
+"""
+
+[tool.poe.tasks.publish-package]
+help = "Publish package to PyPI"
+shell = """
+echo "Publishing to PyPI..."
+if [ -z "$PYPI_TOKEN" ]; then
+    echo "Error: PYPI_TOKEN not found in .env file"
+    exit 1
+fi
+uv publish --token $PYPI_TOKEN
+"""
+
+[tool.poe.tasks.verify-package]
+help = "Verify package installation"
+shell = """
+echo "Verifying package installation..."
+uv run --with sonos-lastfm --no-project -- python -c "import sonos_lastfm"
+"""
+
+[tool.poe.tasks.release]
+help = "Full release process (clean, version, build, publish, verify)"
+shell = """
+echo "Starting release process..."
+echo "Current version: $(grep -o 'version = \\"[0-9.]*\\"' pyproject.toml | cut -d'\"' -f2)"
+read -p "Enter new version: " version
+poe clean
+NEW_VERSION=$version poe update-version
+poe build-package
+poe publish-package
+poe verify-package
+echo "Release v$version completed successfully!"
+"""
+

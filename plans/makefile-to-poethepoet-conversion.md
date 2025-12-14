@@ -74,17 +74,17 @@ The existing Makefile contains the following categories of tasks:
 
 - [x] Create plans subdirectory
 - [x] Generate this conversion plan document
-- [ ] Add PoeThePoet as a development dependency in pyproject.toml
-- [ ] Create `[tool.poe.tasks]` section in pyproject.toml
-- [ ] Convert environment setup tasks (setup, install, install-dev)
-- [ ] Convert code quality tasks (check-types, check-ruff, check-all)
-- [ ] Convert utility tasks (clean, run, versions, version)
-- [ ] Convert release management tasks (update-version, build-package, publish-package, verify-package, release)
-- [ ] Add environment variable support (.env file loading)
-- [ ] Test all converted tasks to ensure they work as expected
-- [ ] Update README.md to document poe commands
-- [ ] Verify the Makefile can be deprecated (all functionality preserved)
-- [ ] Run final checks and validation
+- [x] Add PoeThePoet as a development dependency in pyproject.toml
+- [x] Create `[tool.poe.tasks]` section in pyproject.toml
+- [x] Convert environment setup tasks (setup, install, install-dev)
+- [x] Convert code quality tasks (check-types, check-ruff, check-all)
+- [x] Convert utility tasks (clean, run, versions, version)
+- [x] Convert release management tasks (update-version, build-package, publish-package, verify-package, release)
+- [x] Add environment variable support (.env file loading)
+- [x] Test all converted tasks to ensure they work as expected
+- [x] Update README.md to document poe commands
+- [x] Verify the Makefile can be deprecated (all functionality preserved)
+- [x] Run final checks and validation
 
 ## Testing Strategy
 

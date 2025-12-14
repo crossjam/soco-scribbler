@@ -61,6 +61,32 @@ uv add keyring keyrings.alt
 
    Run `make help` to see all available commands.
 
+### Using PoeThePoet Tasks
+
+The project now supports [PoeThePoet](https://poethepoet.natn.io) as a modern task runner. After installing development dependencies, you can use `poe` commands as an alternative to Make:
+
+```bash
+# Install development dependencies (includes poethepoet)
+make install-dev
+# or with pip:
+pip install -e ".[dev]"
+
+# Run poe tasks
+poe setup          # Set up Python environment
+poe install        # Install dependencies
+poe check-all      # Run all code quality checks
+poe clean          # Clean up build artifacts
+poe run            # Run the scrobbler
+
+# View all available tasks
+poe --help
+
+# Run a task with verbose output
+poe -v check-types
+```
+
+All Makefile commands have equivalent PoeThePoet tasks. Tasks are configured in `pyproject.toml` under `[tool.poe.tasks]`.
+
 ### Building the package
 
 The project uses [`uv`](https://github.com/astral-sh/uv) to drive packaging
