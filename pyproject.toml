@@ -124,7 +124,7 @@ sequence = ["check-types", "check-ruff"]
 # QA Tasks (aliases and additional checks)
 [tool.poe.tasks.lint]
 help = "Run linter (alias for check-ruff)"
-cmd = "ruff check --select=ALL --target-version=py312 src/soco_scribbler/"
+ref = "check-ruff"
 
 [tool.poe.tasks.lint-fix]
 help = "Run linter with auto-fix"
@@ -132,7 +132,7 @@ cmd = "ruff check --select=ALL --target-version=py312 --fix src/soco_scribbler/"
 
 [tool.poe.tasks.typecheck]
 help = "Run type checker (alias for check-types)"
-cmd = "mypy --strict --python-version=3.12 src/soco_scribbler/"
+ref = "check-types"
 
 [tool.poe.tasks.format]
 help = "Format code with ruff"

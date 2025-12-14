@@ -26,13 +26,13 @@ This conversion successfully migrated all Makefile tasks to PoeThePoet (poe), a 
 
 ## Task Mapping
 
-All Makefile tasks have been successfully converted, plus additional QA tasks added:
+The conversion includes all original Makefile tasks plus additional QA tasks:
 
 | Category | Tasks |
 |----------|-------|
 | Environment Setup | setup, install, install-dev |
 | Code Quality | check-types, check-ruff, check-all |
-| QA Tasks | lint, lint-fix, typecheck, format, format-check, test, qa |
+| QA Tasks (Added) | lint, lint-fix, typecheck, format, format-check, test, qa |
 | Utility | clean, run, versions, version |
 | Release Management | update-version, build-package, publish-package, verify-package, release |
 
