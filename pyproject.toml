@@ -201,7 +201,7 @@ uv publish --token $PYPI_TOKEN
 help = "Verify package installation"
 shell = """
 echo "Verifying package installation..."
-uv run --with sonos-lastfm --no-project -- python -c "import sonos_lastfm"
+uv run --with soco-scribbler --no-project -- python -c "import soco_scribbler"
 """
 
 [tool.poe.tasks.release]

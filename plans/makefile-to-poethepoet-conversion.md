@@ -113,9 +113,14 @@ For each converted task, we will:
 5. **Documentation**: Built-in help system
 6. **Modern**: Aligned with modern Python project standards
 
-## Post-Conversion
+## Post-Conversion Notes
 
 After successful conversion and testing:
+- The Makefile contained several outdated references that were corrected during conversion:
+  - File paths: Makefile referenced `sonos_lastfm.py` and `utils.py` in the root, but actual files are in `src/soco_scribbler/`
+  - Module name: Makefile used `sonos_lastfm` module, but the actual module is `soco_scribbler`
+  - Package name: Makefile referenced `sonos-lastfm` package, but actual package name is `soco-scribbler`
+  - Updated tasks now check the entire `src/soco_scribbler/` directory for better coverage
 - Consider adding deprecation notice to Makefile
 - Update CI/CD pipelines if they reference make commands
 - Ensure documentation reflects new task runner

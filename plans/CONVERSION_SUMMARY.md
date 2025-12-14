@@ -104,7 +104,15 @@ poe release            # Full release workflow
 
 ## Makefile Status
 
-The original Makefile remains in place for backwards compatibility. Both Make and poe commands can be used interchangeably. The Makefile can be deprecated in a future version once all users have migrated to poe.
+The original Makefile remains in place for backwards compatibility. Both Make and poe commands can be used interchangeably. 
+
+**Important Note:** The Makefile contained several outdated references that were corrected during the PoeThePoet conversion:
+- File paths: Makefile referenced `sonos_lastfm.py` and `utils.py` in root, but files are in `src/soco_scribbler/`
+- Module name: Makefile used `sonos_lastfm`, corrected to `soco_scribbler`
+- Package name: Makefile referenced `sonos-lastfm`, corrected to `soco-scribbler`
+- Check tasks now scan the entire `src/soco_scribbler/` directory for better coverage
+
+The PoeThePoet tasks are now functional and use the correct paths and names. The Makefile can be deprecated in a future version once all users have migrated to poe.
 
 ## Testing Performed
 
