@@ -84,7 +84,7 @@ poe check-all          # Run type checking and linting
 # Individual QA tasks
 poe lint               # Run linter (ruff)
 poe lint-fix           # Run linter with auto-fix
-poe typecheck          # Run type checker (pyright)
+poe typecheck          # Run type checker (ty)
 poe format             # Format code with ruff
 poe format-check       # Check if code is formatted correctly
 poe test               # Run tests with pytest

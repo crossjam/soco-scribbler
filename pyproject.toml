@@ -37,7 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "poethepoet>=0.24.0",
-    "pyright>=1.1.0",
+    "ty>=0.1.0",
     "ruff>=0.1.0",
     "build>=1.0.0",
     "pytest>=7.0.0",
@@ -58,17 +58,6 @@ license-files = ["LICENSE"]
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["soco_scribbler"]
-
-[tool.pyright]
-pythonVersion = "3.12"
-typeCheckingMode = "strict"
-reportMissingImports = true
-reportMissingTypeStubs = true
-reportUnusedImport = true
-reportUnusedClass = true
-reportUnusedFunction = true
-reportUnusedVariable = true
-reportDuplicateImport = true
 
 [tool.ruff]
 target-version = "py312"
@@ -105,8 +94,8 @@ echo "Python environment setup complete. Run 'make install' to install dependenc
 
 # Code Quality Tasks
 [tool.poe.tasks.check-types]
-help = "Run pyright type checker"
-cmd = "pyright src/soco_scribbler/"
+help = "Run ty type checker"
+cmd = "ty check src/soco_scribbler/"
 
 [tool.poe.tasks.check-ruff]
 help = "Run ruff linter"
@@ -139,17 +128,7 @@ cmd = "ruff format --check src/soco_scribbler/"
 
 [tool.poe.tasks.test]
 help = "Run tests with pytest"
-shell = """
-if [ -d "tests" ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
-    pytest tests/ -v
-else
-    echo "Error: No tests found. To add tests:"
-    echo "1. Create tests/ directory"
-    echo "2. Add test files (e.g., test_*.py)"
-    echo "3. Run: poe test"
-    exit 1
-fi
-"""
+cmd = "pytest tests/ -v"
 
 [tool.poe.tasks.qa]
 help = "Run all QA checks (format, lint, typecheck)"
