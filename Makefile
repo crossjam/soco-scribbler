@@ -14,11 +14,11 @@ PYTHON_FILES := sonos_lastfm.py utils.py
 
 # Install development dependencies
 install-dev:
-	uv pip install build mypy ruff setuptools wheel types-setuptools
+	uv pip install build pyright ruff setuptools wheel pytest
 
-# Check types with mypy
+# Check types with pyright
 check-types:
-	mypy --strict --python-version=3.12 $(PYTHON_FILES)
+	pyright $(PYTHON_FILES)
 
 # Run ruff type checking and linting
 check-ruff:

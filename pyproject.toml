@@ -37,10 +37,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "poethepoet>=0.24.0",
-    "mypy>=1.0.0",
+    "pyright>=1.1.0",
     "ruff>=0.1.0",
     "build>=1.0.0",
-    "types-setuptools>=68.0.0",
+    "pytest>=7.0.0",
 ]
 
 [project.urls]
@@ -59,21 +59,16 @@ license-files = ["LICENSE"]
 where = ["src"]
 include = ["soco_scribbler"]
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-show_error_codes = true
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = true
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
 
 [tool.ruff]
 target-version = "py312"
@@ -110,8 +105,8 @@ echo "Python environment setup complete. Run 'make install' to install dependenc
 
 # Code Quality Tasks
 [tool.poe.tasks.check-types]
-help = "Run mypy type checker"
-cmd = "mypy --strict --python-version=3.12 src/soco_scribbler/"
+help = "Run pyright type checker"
+cmd = "pyright src/soco_scribbler/"
 
 [tool.poe.tasks.check-ruff]
 help = "Run ruff linter"
@@ -143,13 +138,17 @@ help = "Check code formatting without making changes"
 cmd = "ruff format --check src/soco_scribbler/"
 
 [tool.poe.tasks.test]
-help = "Run tests (placeholder - no tests configured yet)"
+help = "Run tests with pytest"
 shell = """
-echo "Error: No tests configured yet. To add tests:"
-echo "1. Add pytest to dev dependencies"
-echo "2. Create tests/ directory with test files"
-echo "3. Update this task to run: pytest tests/"
-exit 1
+if [ -d "tests" ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
+    pytest tests/ -v
+else
+    echo "Error: No tests found. To add tests:"
+    echo "1. Create tests/ directory"
+    echo "2. Add test files (e.g., test_*.py)"
+    echo "3. Run: poe test"
+    exit 1
+fi
 """
 
 [tool.poe.tasks.qa]
@@ -159,7 +158,7 @@ sequence = ["format-check", "lint", "typecheck"]
 # Utility Tasks
 [tool.poe.tasks.clean]
 help = "Clean up cache directories and build artifacts"
-shell = "rm -rf .mypy_cache .ruff_cache __pycache__ */__pycache__ .venv dist build *.egg-info"
+shell = "rm -rf .mypy_cache .ruff_cache .pytest_cache __pycache__ */__pycache__ .venv dist build *.egg-info"
 
 # Release Management Tasks
 [tool.poe.tasks.update-version]
