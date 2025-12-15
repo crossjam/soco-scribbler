@@ -60,7 +60,7 @@ where = ["src"]
 include = ["soco_scribbler"]
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 typeCheckingMode = "strict"
 reportMissingImports = true
 reportMissingTypeStubs = true
