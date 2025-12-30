@@ -34,6 +34,15 @@ dependencies = [
     "sqlite-utils>=3.38",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "poethepoet>=0.24.0",
+    "ty>=0.1.0",
+    "ruff>=0.1.0",
+    "build>=1.0.0",
+    "pytest>=7.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/crossjam/soco-scribbler"
 Issues = "https://github.com/crossjam/soco-scribbler/issues"
@@ -49,22 +58,6 @@ license-files = ["LICENSE"]
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["soco_scribbler"]
-
-[tool.mypy]
-python_version = "3.11"
-strict = true
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-show_error_codes = true
 
 [tool.ruff]
 target-version = "py312"
@@ -82,4 +75,113 @@ max-complexity = 10
 convention = "google"
 
 [tool.ruff.lint.pylint]
-max-args = 6 
+max-args = 6
+
+# PoeThePoet task configuration
+[tool.poe]
+envfile = ".env"
+
+[tool.poe.tasks]
+
+# Code Quality Tasks
+[tool.poe.tasks.check-types]
+help = "Run ty type checker"
+cmd = "ty check src/soco_scribbler/"
+
+[tool.poe.tasks.check-ruff]
+help = "Run ruff linter"
+cmd = "ruff check --select=ALL --target-version=py312 src/soco_scribbler/"
+
+[tool.poe.tasks.check-all]
+help = "Run all checks (types and linting)"
+sequence = ["check-types", "check-ruff"]
+
+# QA Tasks (aliases and additional checks)
+[tool.poe.tasks.lint]
+help = "Run linter (alias for check-ruff)"
+ref = "check-ruff"
+
+[tool.poe.tasks.lint-fix]
+help = "Run linter with auto-fix"
+cmd = "ruff check --select=ALL --target-version=py312 --fix src/soco_scribbler/"
+
+[tool.poe.tasks.typecheck]
+help = "Run type checker (alias for check-types)"
+ref = "check-types"
+
+[tool.poe.tasks.format]
+help = "Format code with ruff"
+cmd = "ruff format src/soco_scribbler/"
+
+[tool.poe.tasks.format-check]
+help = "Check code formatting without making changes"
+cmd = "ruff format --check src/soco_scribbler/"
+
+[tool.poe.tasks.test]
+help = "Run tests with pytest"
+cmd = "pytest tests/ -v"
+
+[tool.poe.tasks.qa]
+help = "Run all QA checks (format, lint, typecheck)"
+sequence = ["format-check", "lint", "typecheck"]
+
+# Utility Tasks
+[tool.poe.tasks.clean]
+help = "Clean up cache directories and build artifacts"
+shell = "rm -rf .mypy_cache .ruff_cache .pytest_cache __pycache__ */__pycache__ .venv dist build *.egg-info"
+
+# Release Management Tasks
+[tool.poe.tasks.update-version]
+help = "Update version in pyproject.toml and __init__.py (requires NEW_VERSION env var)"
+shell = """
+if [ -z "$NEW_VERSION" ]; then
+    echo "Error: NEW_VERSION is not set"
+    exit 1
+fi
+echo "Updating version to $NEW_VERSION"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
+    sed -i '' "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/soco_scribbler/__init__.py
+else
+    sed -i "s/version = \\"[0-9.]*\\"/version = \\"$NEW_VERSION\\"/" pyproject.toml
+    sed -i "s/__version__ = \\"[0-9.]*\\"/__version__ = \\"$NEW_VERSION\\"/" src/soco_scribbler/__init__.py
+fi
+"""
+
+[tool.poe.tasks.build-package]
+help = "Build Python package (wheel and sdist)"
+cmd = "uv run --with build python -m build --wheel --sdist"
+
+[tool.poe.tasks.publish-package]
+help = "Publish package to PyPI"
+shell = """
+echo "Publishing to PyPI..."
+if [ -z "$PYPI_TOKEN" ]; then
+    echo "Error: PYPI_TOKEN not found in .env file"
+    exit 1
+fi
+uv publish --token $PYPI_TOKEN
+"""
+
+[tool.poe.tasks.verify-package]
+help = "Verify package installation"
+shell = """
+echo "Verifying package installation..."
+# Package name uses hyphen (soco-scribbler), Python module uses underscore (soco_scribbler)
+uv run --with soco-scribbler --no-project -- python -c "import soco_scribbler"
+"""
+
+[tool.poe.tasks.release]
+help = "Full release process (clean, version, build, publish, verify)"
+shell = """
+echo "Starting release process..."
+echo "Current version: $(grep -o 'version = \\"[0-9.]*\\"' pyproject.toml | cut -d'\"' -f2)"
+read -p "Enter new version: " version
+poe clean
+NEW_VERSION=$version poe update-version
+poe build-package
+poe publish-package
+poe verify-package
+echo "Release v$version completed successfully!"
+"""
+
