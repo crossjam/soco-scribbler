@@ -1,56 +1,56 @@
 # Makefile to PoeThePoet Conversion Summary
 
-**Completion Date:** 2025-12-14T23:25:26.793Z  
+**Completion Date:** 2025-12-30T23:25:20.106Z  
 **Status:** ✅ Complete  
 
 ## What Was Done
 
-This conversion successfully migrated all Makefile tasks to PoeThePoet (poe), a modern Python task runner integrated with pyproject.toml.
+This conversion successfully replaced the Makefile with PoeThePoet (poe), a modern Python task runner integrated with pyproject.toml. The Makefile has been completely removed.
 
 ### Files Modified
 
 1. **pyproject.toml**
-   - Added `[project.optional-dependencies]` section with dev dependencies including `poethepoet>=0.24.0`
+   - Added `[project.optional-dependencies]` section with dev dependencies including `poethepoet>=0.24.0`, `ty>=0.1.0`, `pytest>=7.0.0`
    - Added `[tool.poe]` configuration with `.env` file support
-   - Added `[tool.poe.tasks]` with all 15 task definitions
+   - Added `[tool.poe.tasks]` with all task definitions
+   - Organized dependencies for uv workflow
 
 2. **README.md**
-   - Added new section "Using PoeThePoet Tasks" with usage examples
-   - Documented how to install and use poe commands
-   - Included comparison to Make commands
+   - Updated "Using PoeThePoet Tasks" section with uv-based workflow
+   - Removed all Makefile references
+   - Documented how to install and use poe commands with uv
 
-3. **plans/makefile-to-poethepoet-conversion.md**
+3. **Makefile**
+   - **REMOVED**: Makefile has been completely removed from the project
+
+4. **plans/makefile-to-poethepoet-conversion.md**
    - Created comprehensive conversion plan
    - Documented all tasks and their mappings
    - Included testing strategy and benefits
 
 ## Task Mapping
 
-The conversion includes selected Makefile tasks plus additional QA tasks:
+All development tasks are now managed via PoeThePoet:
 
 | Category | Tasks |
 |----------|-------|
-| Environment Setup | setup |
 | Code Quality | check-types, check-ruff, check-all |
-| QA Tasks (Added) | lint, lint-fix, typecheck, format, format-check, test, qa |
+| QA Tasks | lint, lint-fix, typecheck, format, format-check, test, qa |
 | Utility | clean |
 | Release Management | update-version, build-package, publish-package, verify-package, release |
 
-**Note:** Install tasks (install, install-dev) from the Makefile are handled via `make install` and `make install-dev` directly, as they're specific to uv tooling. The `help` task is not needed as poe provides built-in help via `poe --help`.
+**Note:** Installation is now handled directly via uv (`uv pip install -e ".[dev]"`). The `help` task is not needed as poe provides built-in help via `poe --help`.
 
 ## How to Use
 
-### Installing PoeThePoet
+### Installing Dependencies
 
 ```bash
-# Option 1: Via make
-make install-dev
+# Install uv first
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Option 2: Via pip
-pip install -e ".[dev]"
-
-# Option 3: Via pip directly
-pip install poethepoet
+# Install the package with development dependencies
+uv pip install -e ".[dev]"
 ```
 
 ### Running Tasks
@@ -72,10 +72,8 @@ poe -d clean
 ### Task Examples
 
 ```bash
-# Development workflow
-poe setup              # Create virtual environment
-make install           # Install dependencies (via Makefile)
-make install-dev       # Install dev dependencies (via Makefile)
+# Development workflow (all via uv and poe)
+uv pip install -e ".[dev]"  # Install with dev dependencies
 
 # QA and Code Quality (comprehensive)
 poe qa                 # Run all QA checks (format, lint, typecheck)
@@ -108,34 +106,38 @@ poe release            # Full release workflow
 7. **Environment files**: Native .env file support
 8. **Sequence tasks**: Easy task composition (e.g., check-all runs check-types and check-ruff)
 
-## Makefile Status
+## Makefile Removal
 
-The original Makefile remains in place for backwards compatibility. Both Make and poe commands can be used interchangeably. 
+The Makefile has been **completely removed** from the project. All development workflows now use PoeThePoet tasks with uv for dependency management.
 
-**Important Note:** The Makefile contained several outdated references that were corrected during the PoeThePoet conversion:
-- File paths: Makefile referenced `sonos_lastfm.py` and `utils.py` in root, but files are in `src/soco_scribbler/`
-- Module name: Makefile used `sonos_lastfm`, corrected to `soco_scribbler`
-- Package name: Makefile referenced `sonos-lastfm`, corrected to `soco-scribbler`
-- Check tasks now scan the entire `src/soco_scribbler/` directory for better coverage
+**What was removed:**
+- Makefile with outdated references to non-existent root files
+- Installation tasks (now handled by `uv pip install -e ".[dev]"`)
+- Build tasks (now handled by poe tasks)
 
-The PoeThePoet tasks are now functional and use the correct paths and names. The Makefile can be deprecated in a future version once all users have migrated to poe.
+**Migration path:**
+- Old: `make install-dev` → New: `uv pip install -e ".[dev]"`
+- Old: `make check-all` → New: `poe check-all`
+- Old: `make clean` → New: `poe clean`
+- Old: `make build-package` → New: `poe build-package`
 
 ## Testing Performed
 
 - ✅ Verified poe can read pyproject.toml configuration
-- ✅ Confirmed all 15 tasks are properly defined
+- ✅ Confirmed all tasks are properly defined
 - ✅ Validated task help descriptions
 - ✅ Tested task listing with `poe --help`
 - ✅ Verified .env file support configuration
-- ✅ Confirmed sequence tasks (check-all, release) are properly configured
+- ✅ Confirmed sequence tasks (check-all, qa) are properly configured
+- ✅ Verified ty type checker works correctly
+- ✅ Verified pytest integration
 
 ## Next Steps (Optional)
 
-1. Consider adding a deprecation notice to the Makefile
-2. Update CI/CD pipelines to use poe commands
-3. Add shell completion setup instructions to README
-4. Consider adding more sophisticated task composition as project grows
-5. May want to add task aliases for common workflows
+1. Update CI/CD pipelines to use poe commands with uv
+2. Add shell completion setup instructions to README
+3. Consider adding more sophisticated task composition as project grows
+4. May want to add task aliases for common workflows
 
 ## References
 

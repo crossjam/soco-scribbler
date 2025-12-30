@@ -83,15 +83,6 @@ envfile = ".env"
 
 [tool.poe.tasks]
 
-# Environment Setup Tasks
-[tool.poe.tasks.setup]
-help = "Set up Python environment with uv"
-shell = """
-echo "Setting up Python environment..."
-uv venv
-echo "Python environment setup complete. Run 'make install' to install dependencies."
-"""
-
 # Code Quality Tasks
 [tool.poe.tasks.check-types]
 help = "Run ty type checker"

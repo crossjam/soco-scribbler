@@ -44,38 +44,24 @@ uv add keyring keyrings.alt
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. Setup and run using Make commands:
+2. Clone the repository and set up the development environment:
    ```bash
-   # Setup Python environment with uv
-   make setup
-
-   # Install dependencies
-   make install
-
-   # For development, install additional tools (optional)
-   make install-dev
-
+   # Clone the repository
+   git clone https://github.com/crossjam/soco-scribbler
+   cd soco-scribbler
+   
+   # Install the package with development dependencies
+   uv pip install -e ".[dev]"
+   
    # Optional: Install keyring backend for secure credential storage
-   pip install keyring keyrings.alt
+   uv pip install keyring keyrings.alt
    ```
-
-   Run `make help` to see all available commands.
 
 ### Using PoeThePoet Tasks
 
-The project now supports [PoeThePoet](https://poethepoet.natn.io) as a modern task runner. After installing development dependencies, you can use `poe` commands as an alternative to Make:
+The project uses [PoeThePoet](https://poethepoet.natn.io) as a task runner for development workflows. After installing development dependencies with `uv pip install -e ".[dev]"`, you can use `poe` commands:
 
 ```bash
-# Install development dependencies (includes poethepoet)
-make install-dev
-# or with pip:
-pip install -e ".[dev]"
-
-# Run poe tasks
-poe setup          # Set up Python environment
-make install       # Install dependencies (via Makefile)
-poe clean          # Clean up build artifacts
-
 # QA and Code Quality tasks
 poe qa             # Run all QA checks (format, lint, typecheck)
 poe lint           # Run linter (ruff)
@@ -86,6 +72,9 @@ poe format-check   # Check if code is formatted correctly
 poe test           # Run tests with pytest
 poe check-all      # Run type checking and linting
 
+# Utility tasks
+poe clean          # Clean up build artifacts
+
 # View all available tasks
 poe --help
 
@@ -93,7 +82,7 @@ poe --help
 poe -v typecheck
 ```
 
-All Makefile commands have equivalent PoeThePoet tasks. Tasks are configured in `pyproject.toml` under `[tool.poe.tasks]`.
+All development tasks are configured in `pyproject.toml` under `[tool.poe.tasks]`.
 
 ### Building the package
 
@@ -101,7 +90,7 @@ The project uses [`uv`](https://github.com/astral-sh/uv) to drive packaging
 workflows. You can build both the source and wheel distributions locally with:
 
 ```bash
-make build-package
+poe build-package
 ```
 
 Behind the scenes this ensures the `build` frontend is available and then runs
